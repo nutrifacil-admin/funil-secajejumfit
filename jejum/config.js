@@ -6,8 +6,7 @@ window.SJ_CFG = {
   texto: "#030712",                // cor do texto
   logoTexto: "SECA JEJUM",         // logo em texto (troque por logoImagem quando tiver a sua)
   logoImagem: "",                  // ex.: "img/logo.png"
-  // TESTE: imagens puxadas do quiz de referência. Suba as SUAS em jejum/img/ e troque para "img/".
-  imgBase: "https://quiz.secajejumturbo.site/v21-37/img/",
+  imgBase: "img/",              // suas imagens (pasta jejum/img)
   checkout: "https://pay.cakto.com.br/fk5jcvn",
   produto: "Seca Jejum Turbo",     // aparece na etapa 7 ("escolheram o …")
   vsl: {
