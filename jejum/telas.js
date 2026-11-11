@@ -7,7 +7,7 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "342e7310951c3c3c.webp",
+   "arquivo": "e10-melhor-forma-mulher.webp",
    "arredondar": true,
    "largura": 50,
    "se": "F"
@@ -35,7 +35,7 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "4c55eaead3904494.webp",
+   "arquivo": "e10-melhor-forma-homem.webp",
    "arredondar": true,
    "largura": 39,
    "se": "M"
@@ -214,7 +214,7 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "955dc181e4d69c5f.png"
+   "arquivo": "e15-mecanismo-2-revelacao.webp"
   },
   {
    "tipo": "texto",
@@ -239,7 +239,7 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "8498d03d44057657.webp"
+   "arquivo": "e16-mecanismo-3-jejum-com-agua.webp"
   },
   {
    "tipo": "espaco",
@@ -284,19 +284,19 @@ window.SJ_TELAS = {
    "opcoes": [
     {
      "texto": "Entre 6 e 8 da manhã",
-     "imagem": "fa96d472ed844e92.png"
+     "imagem": "e17-entre-6-e-8-da-manha.webp"
     },
     {
      "texto": "Entre 8 e 10 da manhã",
-     "imagem": "495d6293ee0ace82.png"
+     "imagem": "e17-entre-8-e-10-da-manha.webp"
     },
     {
      "texto": "Entre 10h e meio-dia",
-     "imagem": "eb64cd602a84ef18.png"
+     "imagem": "e17-entre-10h-e-meio-dia.webp"
     },
     {
      "texto": "Eu costumo pular o café da manhã",
-     "imagem": "2626f6fbecd393c0.png"
+     "imagem": "e17-eu-costumo-pular-o-cafe-da-m.webp"
     }
    ]
   }
@@ -314,19 +314,19 @@ window.SJ_TELAS = {
    "opcoes": [
     {
      "texto": "Entre 10h e 12h",
-     "imagem": "3a2930766a23803b.png"
+     "imagem": "e18-entre-10h-e-12h.webp"
     },
     {
      "texto": "Entre 12h e 14h",
-     "imagem": "931b28e378007c2b.png"
+     "imagem": "e18-entre-12h-e-14h.webp"
     },
     {
      "texto": "Entre 14h e 16h",
-     "imagem": "9fded2d7e39c6e1d.png"
+     "imagem": "e18-entre-14h-e-16h.webp"
     },
     {
      "texto": "Eu costumo pular o almoço",
-     "imagem": "f83ebcade8349c5d.png"
+     "imagem": "e18-eu-costumo-pular-o-almoco.webp"
     }
    ]
   }
@@ -344,19 +344,19 @@ window.SJ_TELAS = {
    "opcoes": [
     {
      "texto": "Entre 16h e 18h",
-     "imagem": "709d2420b053e8d2.png"
+     "imagem": "e19-entre-16h-e-18h.webp"
     },
     {
      "texto": "Entre 18h e 20h",
-     "imagem": "1f29c6eeb14705b0.png"
+     "imagem": "e19-entre-18h-e-20h.webp"
     },
     {
      "texto": "Entre 20h e 22h",
-     "imagem": "50b5904864cedfe1.png"
+     "imagem": "e19-entre-20h-e-22h.webp"
     },
     {
      "texto": "Eu costumo pular o jantar",
-     "imagem": "f83ebcade8349c5d.png"
+     "imagem": "e18-eu-costumo-pular-o-almoco.webp"
     }
    ]
   }
@@ -390,7 +390,7 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "67187f17d82fdc6c.png",
+   "arquivo": "e21-agua-mulher.webp",
    "arredondar": true,
    "largura": 50,
    "se": "F"
@@ -418,7 +418,7 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "2eef40d1e1ae433f.webp",
+   "arquivo": "e21-agua-homem.webp",
    "arredondar": true,
    "largura": 32,
    "se": "M"
@@ -452,7 +452,7 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "d3825faae685b07b.webp",
+   "arquivo": "e22-exercicio-mulher.webp",
    "arredondar": true,
    "largura": 50,
    "se": "F"
@@ -480,7 +480,7 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "d6612b80ba22d37c.webp",
+   "arquivo": "e22-exercicio-homem.webp",
    "arredondar": true,
    "largura": 36,
    "se": "M"
@@ -544,7 +544,7 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "e24cf8dc45876553.webp",
+   "arquivo": "e24-sono-mulher.webp",
    "arredondar": true,
    "largura": 50,
    "se": "F"
@@ -572,7 +572,7 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "3c6142ccf4782c96.webp",
+   "arquivo": "e24-sono-homem.webp",
    "arredondar": true,
    "largura": 43,
    "se": "M"
@@ -606,12 +606,12 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "1c21e94ef0a38679.webp",
+   "arquivo": "e25-rosto-quebra-mulher.webp",
    "se": "F"
   },
   {
    "tipo": "imagem",
-   "arquivo": "9b2c9505d5ccb28b.webp",
+   "arquivo": "e25-rosto-quebra-homem.webp",
    "se": "M"
   },
   {
@@ -735,13 +735,13 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "8114f7e3f7b22637.png",
+   "arquivo": "e30-imc-mulher.webp",
    "largura": 44,
    "se": "F"
   },
   {
    "tipo": "imagem",
-   "arquivo": "835c3b76bffb6bd7.webp",
+   "arquivo": "e30-imc-homem.webp",
    "largura": 60,
    "se": "M"
   },
@@ -871,10 +871,10 @@ window.SJ_TELAS = {
    "tipo": "carrossel",
    "proporcao": "1/1",
    "itens": [
-    "e27613effc835ac6.png",
-    "00c34e8d8d98338b.png",
-    "46764cbbcc0e9efe.png",
-    "065be0a27d30cf46.png"
+    "e32-depoimento-1.webp",
+    "e32-depoimento-2.webp",
+    "e32-depoimento-3.webp",
+    "e32-depoimento-4.webp"
    ]
   }
  ],
@@ -926,12 +926,12 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "cf9d52b8a48de1f5.webp",
+   "arquivo": "e33-projecao-mulher.webp",
    "se": "F"
   },
   {
    "tipo": "imagem",
-   "arquivo": "a6ab53c1661a6651.webp",
+   "arquivo": "e33-projecao-homem.webp",
    "se": "M"
   },
   {
@@ -972,7 +972,7 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "d1cd50c2764ade47.webp"
+   "arquivo": "e34-oferta-vsl.webp"
   }
  ],
  "01": [
@@ -986,7 +986,7 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "4ec81e7920f82c74.webp"
+   "arquivo": "e01-capa.webp"
   },
   {
    "tipo": "texto",
@@ -1026,11 +1026,11 @@ window.SJ_TELAS = {
    "opcoes": [
     {
      "texto": "Mulher",
-     "imagem": "f9973a23fe81e108.webp"
+     "imagem": "e02-mulher.webp"
     },
     {
      "texto": "Homem",
-     "imagem": "664ca64126a13522.webp"
+     "imagem": "e02-homem.webp"
     }
    ]
   }
@@ -1048,19 +1048,19 @@ window.SJ_TELAS = {
    "opcoes": [
     {
      "texto": "18 a 25 anos",
-     "imagem": "77b977af429fbf4b.png"
+     "imagem": "e03-18-a-25-anos-mulher.webp"
     },
     {
      "texto": "26 a 35 anos",
-     "imagem": "bee7644caa7088eb.png"
+     "imagem": "e03-26-a-35-anos-mulher.webp"
     },
     {
      "texto": "36 a 45 anos",
-     "imagem": "5bc60fdfa54481ae.png"
+     "imagem": "e03-36-a-45-anos-mulher.webp"
     },
     {
      "texto": "+46 anos",
-     "imagem": "b80b5241da87ca4a.png"
+     "imagem": "e03-46-anos-mulher.webp"
     }
    ],
    "se": "F"
@@ -1073,19 +1073,19 @@ window.SJ_TELAS = {
    "opcoes": [
     {
      "texto": "18 a 25 anos",
-     "imagem": "426b49a365f3abce.webp"
+     "imagem": "e03-18-a-25-anos-homem.webp"
     },
     {
      "texto": "26 a 35 anos",
-     "imagem": "372648f5f10fda3c.webp"
+     "imagem": "e03-26-a-35-anos-homem.webp"
     },
     {
      "texto": "36 a 45 anos",
-     "imagem": "b258c7e3c35e08c7.webp"
+     "imagem": "e03-36-a-45-anos-homem.webp"
     },
     {
      "texto": "+46 anos",
-     "imagem": "82ccae0db492ec9c.webp"
+     "imagem": "e03-46-anos-homem.webp"
     }
    ],
    "se": "M"
@@ -1098,13 +1098,13 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "78b130983a5cad0d.webp",
+   "arquivo": "e04-one-belief-mulher.webp",
    "largura": 85,
    "se": "F"
   },
   {
    "tipo": "imagem",
-   "arquivo": "bcf242bdeb11d5ee.webp",
+   "arquivo": "e04-one-belief-homem.webp",
    "largura": 85,
    "se": "M"
   },
@@ -1141,19 +1141,19 @@ window.SJ_TELAS = {
    "opcoes": [
     {
      "texto": "Perder peso",
-     "imagem": "211bb97849dff880.png"
+     "imagem": "e05-perder-peso-mulher.webp"
     },
     {
      "texto": "Ficar em forma",
-     "imagem": "05926849fe35302b.png"
+     "imagem": "e05-ficar-em-forma-mulher.webp"
     },
     {
      "texto": "Melhorar a saúde do coração",
-     "imagem": "fcbdb881c7327cfe.png"
+     "imagem": "e05-melhorar-a-saude-do-coracao-mulher.webp"
     },
     {
      "texto": "Aliviar o estresse",
-     "imagem": "29778d1873c90728.png"
+     "imagem": "e05-aliviar-o-estresse-mulher.webp"
     }
    ],
    "se": "F"
@@ -1197,19 +1197,19 @@ window.SJ_TELAS = {
    "opcoes": [
     {
      "texto": "Magra",
-     "imagem": "7cd17cb98aa2b177.png"
+     "imagem": "e06-magra-mulher.webp"
     },
     {
      "texto": "Falsa magra",
-     "imagem": "8d14672ecb2b0612.png"
+     "imagem": "e06-falsa-magra-mulher.webp"
     },
     {
      "texto": "Sobrepeso",
-     "imagem": "6770d620ea5dbc55.png"
+     "imagem": "e06-sobrepeso-mulher.webp"
     },
     {
      "texto": "Obesa",
-     "imagem": "49b330f3d9ea6e5d.png"
+     "imagem": "e06-obesa-mulher.webp"
     }
    ],
    "se": "F"
@@ -1222,19 +1222,19 @@ window.SJ_TELAS = {
    "opcoes": [
     {
      "texto": "Magro",
-     "imagem": "1d4338fe79156f93.webp"
+     "imagem": "e06-magro-homem.webp"
     },
     {
      "texto": "Flácido",
-     "imagem": "8269b654aa66ba3c.webp"
+     "imagem": "e06-flacido-homem.webp"
     },
     {
      "texto": "Uns quilinhos a mais",
-     "imagem": "ca87b1cf959968d0.webp"
+     "imagem": "e06-uns-quilinhos-a-mais-homem.webp"
     },
     {
      "texto": "Obeso",
-     "imagem": "b0f9ce3c19117233.webp"
+     "imagem": "e06-obeso-homem.webp"
     }
    ],
    "se": "M"
@@ -1253,7 +1253,7 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "92e08d0368e4fe7a.webp"
+   "arquivo": "e07-prova-social-50-mil.webp"
   },
   {
    "tipo": "texto",
@@ -1261,13 +1261,13 @@ window.SJ_TELAS = {
   },
   {
    "tipo": "imagem",
-   "arquivo": "919ae907eba7ce7f.webp",
+   "arquivo": "e07-prova-social-50-mil-mulher.webp",
    "largura": 57,
    "se": "F"
   },
   {
    "tipo": "imagem",
-   "arquivo": "2589fc8000c13b78.webp",
+   "arquivo": "e07-prova-social-50-mil-homem.webp",
    "largura": 61,
    "se": "M"
   },
@@ -1298,23 +1298,23 @@ window.SJ_TELAS = {
    "opcoes": [
     {
      "texto": "Curvilínea",
-     "imagem": "7589329125ff8988.png"
+     "imagem": "e08-curvilinea-mulher.webp"
     },
     {
      "texto": "Magra",
-     "imagem": "4f6b3cab8394c6db.png"
+     "imagem": "e08-magra-mulher.webp"
     },
     {
      "texto": "Normal",
-     "imagem": "730c0384076a9afb.png"
+     "imagem": "e08-normal-mulher.webp"
     },
     {
      "texto": "Em forma",
-     "imagem": "05926849fe35302b.png"
+     "imagem": "e05-ficar-em-forma-mulher.webp"
     },
     {
      "texto": "Cheia",
-     "imagem": "c6a0bbf4495c152f.png"
+     "imagem": "e08-cheia-mulher.webp"
     }
    ],
    "se": "F"
@@ -1327,19 +1327,19 @@ window.SJ_TELAS = {
    "opcoes": [
     {
      "texto": "Magro",
-     "imagem": "3a255befa6afb382.webp"
+     "imagem": "e08-magro-homem.webp"
     },
     {
      "texto": "Em forma",
-     "imagem": "1d4338fe79156f93.webp"
+     "imagem": "e06-magro-homem.webp"
     },
     {
      "texto": "Definido",
-     "imagem": "7c33095b0219bfae.webp"
+     "imagem": "e08-definido-homem.webp"
     },
     {
      "texto": "Rasgado",
-     "imagem": "25da7e279c972e6c.webp"
+     "imagem": "e08-rasgado-homem.webp"
     }
    ],
    "se": "M"
@@ -1358,19 +1358,19 @@ window.SJ_TELAS = {
    "opcoes": [
     {
      "texto": "Barriga",
-     "imagem": "5bb148f1f9778860.png"
+     "imagem": "e09-barriga-mulher.webp"
     },
     {
      "texto": "Bunda",
-     "imagem": "e769730e59a75a88.png"
+     "imagem": "e09-bunda-mulher.webp"
     },
     {
      "texto": "Peito",
-     "imagem": "882e5f36a3039dc1.png"
+     "imagem": "e09-peito-mulher.webp"
     },
     {
      "texto": "Pernas",
-     "imagem": "db8487a0107846d4.png"
+     "imagem": "e09-pernas-mulher.webp"
     }
    ],
    "multipla": true,
@@ -1384,23 +1384,23 @@ window.SJ_TELAS = {
    "opcoes": [
     {
      "texto": "Braços",
-     "imagem": "0b5716a8d43afad4.webp"
+     "imagem": "e09-bracos-homem.webp"
     },
     {
      "texto": "Peito",
-     "imagem": "914fdb50e09cae3d.webp"
+     "imagem": "e09-peito-homem.webp"
     },
     {
      "texto": "Barriga",
-     "imagem": "945a2bd2b2f74b37.webp"
+     "imagem": "e09-barriga-homem.webp"
     },
     {
      "texto": "Pernas",
-     "imagem": "2718a7dc638693ed.webp"
+     "imagem": "e09-pernas-homem.webp"
     },
     {
      "texto": "Costas",
-     "imagem": "c17ebb0db0401665.webp"
+     "imagem": "e09-costas-homem.webp"
     }
    ],
    "multipla": true,
