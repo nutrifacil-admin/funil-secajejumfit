@@ -10,6 +10,7 @@ window.SJ_CFG = {
   checkout: "https://pay.cakto.com.br/fk5jcvn",
   produto: "Seca Jejum Turbo",     // aparece na etapa 7 ("escolheram o …")
   vsl: {
+    id: "front",                   // nome da VSL no Flowex (Gerenciador de VSLs)
     src: "https://vz-fc9df7e8-845.b-cdn.net/d826a593-fa31-4b6f-9aa0-45c29e6b5fe1/playlist.m3u8",
     capa: "",
     autoplayTitulo: "Seu plano já começou",

@@ -11,6 +11,19 @@
       .catch(function () { return { _status: 0 }; });
   };
 
+  /* ===================== Preferências deste navegador (Configurações) ===================== */
+  var CFG = {};
+  try { CFG = JSON.parse(localStorage.getItem("flowex_cfg") || "{}") || {}; } catch (e) { CFG = {}; }
+  function salvarCfg() { try { localStorage.setItem("flowex_cfg", JSON.stringify(CFG)); } catch (e) {} }
+  var escuroSistema = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function aplicarTema() {
+    var t = CFG.tema || "escuro";
+    if (t === "auto") t = escuroSistema && !escuroSistema.matches ? "claro" : "escuro";
+    document.documentElement.setAttribute("data-tema", t);
+  }
+  aplicarTema();
+  if (escuroSistema && escuroSistema.addEventListener) escuroSistema.addEventListener("change", aplicarTema);
+
   /* ===================== Galáxia (tela de entrada) ===================== */
   var galaxia = { ativa: false };
   function iniciarGalaxia() {
@@ -171,7 +184,7 @@
     erro.hidden = true; b.disabled = true; b.firstElementChild.textContent = "Verificando…";
     api("login", null, { email: $("l-email").value, senha: $("l-senha").value }).then(function (r) {
       b.disabled = false; b.firstElementChild.textContent = "Entrar no painel";
-      if (r.ok) { galaxia.ativa = false; dobra(r.nome, abrirPainel); return; }
+      if (r.ok) { galaxia.ativa = false; if (CFG.salto === false) abrirPainel(); else dobra(r.nome, abrirPainel); return; }
       erro.textContent = r.erro || "Não conseguimos entrar agora. Tente de novo."; erro.hidden = false;
     });
   });
@@ -241,15 +254,15 @@
       $("entrada").hidden = true; $("painel").hidden = false;
       S.hoje = eu.hoje;
       $("u-nome").textContent = eu.nome; $("u-avatar").textContent = (eu.nome || "?").charAt(0);
-      $("f-funil").innerHTML = Object.keys(eu.funis).map(function (k) { return '<option value="' + k + '">' + esc(eu.funis[k]) + "</option>"; }).join("");
-      try { var v = sessionStorage.getItem("painel_v"); if (VISOES[v]) S.v = v; var p = sessionStorage.getItem("painel_p"); if (p) S.p = p; } catch (e) {}
+      S.eu = eu;
+      try { var v = sessionStorage.getItem("painel_v"); if (VISOES[v]) S.v = v; var p = sessionStorage.getItem("painel_p"); if (p) S.p = p; else if (CFG.periodo) S.p = CFG.periodo; } catch (e) {}
       marcarFiltros();
-      carregar();
+      rota();
     });
   }
 
   function marcarFiltros() {
-    document.querySelectorAll(".abas button").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.aba === S.v ? "true" : "false"); });
+    document.querySelectorAll("#filtros .abas button").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.aba === S.v ? "true" : "false"); });
     document.querySelectorAll(".periodo > button").forEach(function (b) { b.classList.toggle("ativo", b.dataset.p === S.p); });
     var p = periodo(); $("f-de").value = p[0]; $("f-ate").value = p[1]; $("f-de").max = $("f-ate").max = S.hoje;
   }
@@ -267,11 +280,11 @@
       sel.innerHTML = '<option value="">Todas as campanhas</option>' + d.campanhas.map(function (c) { return '<option value="' + esc(c) + '"' + (c === atual ? " selected" : "") + ">" + esc(c) + "</option>"; }).join("");
       if (atual && d.campanhas.indexOf(atual) < 0) sel.insertAdjacentHTML("beforeend", '<option value="' + esc(atual) + '" selected>' + esc(atual) + "</option>");
       S.d = d;
-      desenhar(d);
-      if (S.visao === "flow") flow.desenhar();
+      if (S.pagina === "vsl") vsls.desenhar(d);
+      else { desenhar(d); if (S.visao === "flow") flow.desenhar(); }
     });
     clearInterval(S.timer);
-    if (S.p === "hoje") S.timer = setInterval(carregar, 60000);   // hoje: atualiza sozinho a cada minuto
+    if (S.p === "hoje") S.timer = setInterval(function () { if (S.pagina === "funil" || S.pagina === "vsl") carregar(); }, 60000);   // hoje: atualiza sozinho a cada minuto
   }
   function trocarVisao() { marcarFiltros(); if (S.d) { desenhar(S.d); if (S.visao === "flow") flow.desenhar(); } }
 
@@ -421,11 +434,11 @@
   });
 
   // Filtros
-  document.querySelectorAll(".abas button").forEach(function (b) { b.addEventListener("click", function () { S.v = b.dataset.aba; try { sessionStorage.setItem("painel_v", S.v); } catch (e) {} trocarVisao(); }); });
+  document.querySelectorAll("#filtros .abas button").forEach(function (b) { b.addEventListener("click", function () { S.v = b.dataset.aba; try { sessionStorage.setItem("painel_v", S.v); } catch (e) {} trocarVisao(); }); });
   document.querySelectorAll(".periodo > button").forEach(function (b) { b.addEventListener("click", function () { S.p = b.dataset.p; try { sessionStorage.setItem("painel_p", S.p); } catch (e) {} marcarFiltros(); carregar(); }); });
   ["f-de", "f-ate"].forEach(function (id) { $(id).addEventListener("change", function () { S.p = "custom"; S.de = $("f-de").value; S.ate = $("f-ate").value; if (S.de > S.ate) { var t = S.de; S.de = S.ate; S.ate = t; } marcarFiltros(); carregar(); }); });
   $("f-camp").addEventListener("change", function () { S.c = this.value; carregar(); });
-  $("f-funil").addEventListener("change", function () { S.f = this.value; S.c = ""; carregar(); });
+
   $("f-atualizar").addEventListener("click", carregar);
 
   // Menu do usuário
@@ -665,7 +678,7 @@
       fx.width = caixa.clientWidth * dpr; fx.height = caixa.clientHeight * dpr; fxc.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     function talvezNave() {
-      if (calmo || caixa.hidden) return;
+      if (calmo || caixa.hidden || CFG.nave === false) return;
       var hoje = S.hoje, ja = null; try { ja = localStorage.getItem("flowex_nave"); } catch (e) {}
       if (ja === hoje) return;
       try { localStorage.setItem("flowex_nave", hoje); } catch (e) {}
@@ -781,6 +794,384 @@
   }
   try { S.visao = localStorage.getItem("flowex_visao") === "flow" ? "flow" : "lista"; } catch (e) {}
   mostrarVisao();
+
+    /* ===================== Rotas: Início › Produto › Gerenciador ===================== */
+  var PAGINAS = { funil: "Gerenciador de Funil", vsl: "Gerenciador de VSLs", criativos: "Gerenciador de Criativos" };
+  function produto(id) { return S.eu && S.eu.produtos && S.eu.produtos[id]; }
+  function rota() {
+    if (!S.eu) return;
+    var h = location.hash.replace(/^#\/?/, "").split("/"), pag = "home", prod = null;
+    if (h[0] === "config") pag = "config";
+    else if (h[0] === "p" && produto(h[1])) { prod = h[1]; pag = PAGINAS[h[2]] ? h[2] : "home"; }
+    S.pagina = pag; S.produto = prod;
+    ["home", "config", "criativos", "vsl", "funil"].forEach(function (x) { $("v-" + x).hidden = x !== pag; });
+    $("filtros").hidden = !(pag === "funil" || pag === "vsl");
+    $("filtros").classList.toggle("so-periodo", pag === "vsl");
+    var P = prod && produto(prod), t = '<a href="#/">Produtos</a>';
+    if (P) t += '<span>›</span><a href="#/p/' + prod + '">' + esc(P.nome) + "</a>";
+    if (P && PAGINAS[pag]) t += "<span>›</span><b>" + PAGINAS[pag] + "</b>";
+    if (pag === "config") t += "<span>›</span><b>Configurações</b>";
+    $("trilha").innerHTML = t;
+    window.scrollTo(0, 0);
+    if (pag !== "funil" && pag !== "vsl") clearInterval(S.timer);
+    if (pag === "home") inicioPag.desenhar(prod);
+    else if (pag === "config") configPag.desenhar();
+    else if (pag === "criativos") criativos.abrir(prod);
+    else {
+      if (S.f !== P.funil) { S.f = P.funil; S.d = null; }
+      S.f = P.funil;
+      if (pag === "funil") { $("v-funil").hidden = false; mostrarVisao(); }
+      carregar();
+    }
+  }
+  window.addEventListener("hashchange", rota);
+
+  /* ===================== Início: os produtos ===================== */
+  var inicioPag = (function () {
+    var cache = {};
+    var MODULOS = [
+      { id: "funil", nome: "Gerenciador de Funil", desc: "Retenção tela a tela do front, upsell, downsell, entrega e funil completo · Lista e Flow", ic: '<path d="M3 7h5v10H3zM16 7h5v10h-5zM8 12h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>' },
+      { id: "vsl", nome: "Gerenciador de VSLs", desc: "Curva de retenção de cada vídeo, pitch, CTA, evasão por trecho e conversão", ic: '<rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/>' },
+      { id: "criativos", nome: "Gerenciador de Criativos", desc: "Esteira de testes, status, CTR, CPC, CPA e histórico de cada criativo", ic: '<rect x="3" y="4" width="18" height="16" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="9" cy="10" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 18l5-5 4 4 3-3 4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>' }
+    ];
+    var EM_BREVE = [["Ofertas e Checkout", "preços, order bump, aprovação por meio de pagamento"], ["Financeiro", "investimento em anúncios, lucro, ROAS e margem por dia"], ["Copy e Páginas", "versões de textos, testes A/B e histórico"], ["Clientes e Suporte", "reembolsos, chargebacks e atendimento"]];
+    function soma(d, f) { return d ? d.porDia.reduce(function (s, x) { return s + f(x); }, 0) : 0; }
+    function linha(serie, cor) {
+      var max = Math.max(1, Math.max.apply(null, serie)), W = 120, H = 34, n = serie.length;
+      var pts = serie.map(function (v, i) { return (n > 1 ? i / (n - 1) * W : 0).toFixed(1) + "," + (H - 3 - v / max * (H - 8)).toFixed(1); }).join(" ");
+      return '<svg class="mini" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" aria-hidden="true"><polyline points="' + pts + '" fill="none" stroke="' + cor + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+    }
+    function desenhar(aberto) {
+      var P = S.eu.produtos, ids = Object.keys(P), el = $("v-home");
+      var hora = new Date().getHours(), saud = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
+      el.innerHTML = '<header class="home-topo"><div><p class="home-data">' + new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" }) + "</p>" +
+        "<h1>" + saud + ", " + esc(S.eu.nome) + "</h1><p>Escolha um produto para abrir os gerenciadores.</p></div>" +
+        '<div class="home-total" id="home-total"></div></header>' +
+        '<div class="produtos">' + ids.map(function (id) {
+          var p = P[id];
+          return '<article class="produto' + (aberto === id ? " aberto" : "") + '" data-id="' + id + '" style="--cor-prod:' + esc(p.cor) + '">' +
+            '<button type="button" class="produto-cab" aria-expanded="' + (aberto === id) + '">' +
+              '<span class="sigla">' + esc(p.sigla) + "</span>" +
+              '<span class="produto-nome"><strong>' + esc(p.nome) + "</strong><small>" + esc(p.sub) + " · " + esc(p.dominio) + "</small></span>" +
+              '<span class="produto-dados" id="pd-' + id + '"><span class="carregando-mini">carregando…</span></span>' +
+              '<span class="produto-seta" aria-hidden="true">⌄</span></button>' +
+            '<div class="modulos">' + MODULOS.map(function (m) {
+              return '<a class="modulo" href="#/p/' + id + "/" + m.id + '"><span class="modulo-ic"><svg viewBox="0 0 24 24" aria-hidden="true">' + m.ic + "</svg></span><strong>" + m.nome + "</strong><small>" + m.desc + '</small><span class="modulo-info" id="mi-' + id + "-" + m.id + '"></span></a>';
+            }).join("") + EM_BREVE.map(function (e) { return '<div class="modulo em-breve"><span class="modulo-ic">＋</span><strong>' + e[0] + "</strong><small>" + e[1] + "</small><span class=\"modulo-info\">em breve</span></div>"; }).join("") +
+            "</div></article>";
+        }).join("") +
+        '<article class="produto novo"><div class="produto-cab"><span class="sigla">+</span><span class="produto-nome"><strong>Novo produto</strong><small>Mande os dados do produto e cadastramos aqui, igual ao Seca Jejum.</small></span></div></article>' +
+        "</div>";
+      el.querySelectorAll(".produto[data-id] .produto-cab").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var id = b.parentNode.dataset.id;
+          location.hash = location.hash === "#/p/" + id ? "#/" : "#/p/" + id;
+        });
+      });
+      // números de hoje e dos últimos 7 dias de cada produto
+      var h = S.hoje, tot = { vis: 0, vendas: 0, rec: 0, rec7: 0 }, faltam = ids.length;
+      ids.forEach(function (id) {
+        var p = P[id];
+        var pronto = function (d) {
+          cache[id] = d;
+          var hoje = d.porDia[d.porDia.length - 1] || { passos: {}, vendas: {} }, vh = hoje.vendas;
+          var vendas = (vh.front || 0) + (vh.upsell || 0) + (vh.downsell || 0), rec = (vh["front-centavos"] || 0) + (vh["upsell-centavos"] || 0) + (vh["downsell-centavos"] || 0);
+          var rec7 = soma(d, function (x) { return (x.vendas["front-centavos"] || 0) + (x.vendas["upsell-centavos"] || 0) + (x.vendas["downsell-centavos"] || 0); });
+          tot.vis += hoje.passos["01"] || 0; tot.vendas += vendas; tot.rec += rec; tot.rec7 += rec7;
+          var alvo = $("pd-" + id);
+          if (alvo) alvo.innerHTML = '<span><small>Visitantes hoje</small><b>' + fmt(hoje.passos["01"] || 0) + "</b></span>" +
+            '<span><small>Vendas hoje</small><b>' + fmt(vendas) + "</b></span>" +
+            '<span><small>Receita hoje</small><b>' + reais(rec) + "</b></span>" +
+            '<span class="spark"><small>Receita 7 dias · ' + reais(rec7) + "</small>" + linha(d.porDia.map(function (x) { return (x.vendas["front-centavos"] || 0) + (x.vendas["upsell-centavos"] || 0) + (x.vendas["downsell-centavos"] || 0); }), p.cor) + "</span>";
+          var mf = $("mi-" + id + "-funil"); if (mf) mf.textContent = fmt(soma(d, function (x) { return x.passos["01"] || 0; })) + " visitantes em 7 dias";
+          var mv = $("mi-" + id + "-vsl"); if (mv) mv.textContent = p.vsls.length + " vídeos · " + fmt(p.vsls.reduce(function (s, v) { return s + soma(d, function (x) { return x.passos[v.id + ".play"] || 0; }); }, 0)) + " plays em 7 dias";
+          if (--faltam === 0) $("home-total").innerHTML = '<span><small>Visitantes hoje</small><b>' + fmt(tot.vis) + "</b></span><span><small>Vendas hoje</small><b>" + fmt(tot.vendas) + "</b></span><span><small>Receita hoje</small><b>" + reais(tot.rec) + '</b></span><span><small>Receita 7 dias</small><b>' + reais(tot.rec7) + "</b></span>";
+        };
+        api("dados", { f: p.funil, g: "todos", de: somaDias(h, -6), ate: h }).then(function (d) { if (d.ok) pronto(d); });
+        api("criativos", { p: id }).then(function (r) {
+          var mc = $("mi-" + id + "-criativos"); if (!mc || !r.ok) return;
+          var ativos = r.lista.filter(function (c) { return ["teste", "aprovado", "escala"].indexOf(c.status) >= 0; }).length;
+          mc.textContent = r.lista.length + " cadastrados · " + ativos + " ativos";
+        });
+      });
+    }
+    return { desenhar: desenhar };
+  })();
+
+  /* ===================== Gerenciador de VSLs ===================== */
+  var vsls = (function () {
+    var duracoes = {}, hlsCarregado = null;
+    function carregarHls(cb) {
+      if (window.Hls) return cb();
+      if (!hlsCarregado) { hlsCarregado = []; var s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/hls.js@1.5.20/dist/hls.light.min.js"; s.onload = s.onerror = function () { hlsCarregado.forEach(function (f) { f(); }); hlsCarregado = null; }; document.head.appendChild(s); }
+      if (hlsCarregado) hlsCarregado.push(cb); else cb();
+    }
+    var mmss = function (s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+    function curva(V, d) {
+      var plays = d.passos[V.id + ".play"] || 0, dur = duracoes[V.id] || 0, pontos = [];
+      var maxB = 0; Object.keys(d.passos).forEach(function (k) { var m = k.match(new RegExp("^" + V.id + "\\.t(\\d{4})$")); if (m) maxB = Math.max(maxB, +m[1]); });
+      var fim = Math.max(dur ? Math.floor(dur / 10) * 10 : 0, maxB);
+      for (var t = 0; t <= fim; t += 10) pontos.push({ t: t, n: d.passos[V.id + ".t" + String(t).padStart(4, "0")] || 0 });
+      return { plays: plays, pontos: pontos, base: plays || (pontos[0] && pontos[0].n) || 0 };
+    }
+    function desenhar(d) {
+      var P = produto(S.produto), el = $("v-vsl");
+      if (!el.dataset.montado || el.dataset.prod !== S.produto) {
+        el.dataset.montado = "1"; el.dataset.prod = S.produto;
+        el.innerHTML = '<header class="pag-topo"><div><h1>Gerenciador de VSLs</h1><p>Retenção de cada vídeo contando quem deu play com som. Cada ponto da curva é um trecho de 10 segundos.</p></div></header>' +
+          P.vsls.map(function (V) {
+            return '<section class="vsl-cartao" data-v="' + V.id + '"><div class="vsl-esq"><div class="vsl-video"><video id="pv-' + V.id + '" controls muted playsinline preload="metadata"></video></div>' +
+              "<h2>" + esc(V.nome) + "</h2><p>" + esc(V.onde) + '</p><p class="vsl-marcas"><span class="m-pitch">Pitch ' + mmss(V.pitch) + '</span><span class="m-cta">Botão ' + mmss(V.cta) + '</span><span class="m-dur" id="dur-' + V.id + '">duração …</span></p></div>' +
+              '<div class="vsl-dir"><div class="kpis vsl-kpis" id="vk-' + V.id + '"></div><div class="vsl-grafico" id="vg-' + V.id + '"></div><div class="vsl-evasoes" id="ve-' + V.id + '"></div></div></section>';
+          }).join("") + '<p class="nota">A retenção começa a ser contada quando a pessoa toca para ouvir (play com som). Quem só viu o vídeo mudo entra em "Carregamentos". Os números começaram a contar quando o Gerenciador de VSLs entrou no ar.</p>';
+        P.vsls.forEach(function (V) {
+          var vid = $("pv-" + V.id);
+          vid.addEventListener("loadedmetadata", function () { if (isFinite(vid.duration)) { duracoes[V.id] = vid.duration; $("dur-" + V.id).textContent = "duração " + mmss(vid.duration); if (S.d) desenharUma(V, S.d); } });
+          carregarHls(function () {
+            if (window.Hls && window.Hls.isSupported()) { var h = new window.Hls({ startLevel: 0, autoStartLoad: true }); h.loadSource(V.src); h.attachMedia(vid); }
+            else vid.src = V.src;
+          });
+        });
+      }
+      P.vsls.forEach(function (V) { desenharUma(V, d); });
+    }
+    function desenharUma(V, d) {
+      var v = d.passos, c = curva(V, d), A = S.ant ? curva(V, S.ant) : null, base = c.base;
+      var carregou = v[V.id + ".carregou"] || 0, pitch = v[V.id + ".pitch"] || 0, cta = v[V.id + ".cta"] || 0, fim = v[V.id + ".fim"] || 0;
+      var clique = v[V.clique] || 0, vendas = d.vendas[V.venda] || 0;
+      var k = [
+        ["Carregamentos", fmt(carregou), "pessoas que chegaram no vídeo", true],
+        ["Play com som", fmt(c.plays), pctTxt(pct(c.plays, carregou)) + " de quem carregou (play rate)"],
+        ["Ficaram até o pitch", pctTxt(pct(pitch, c.plays)), fmt(pitch) + " pessoas · " + mmss(V.pitch)],
+        ["Viram o botão", pctTxt(pct(cta, c.plays)), fmt(cta) + " pessoas · " + mmss(V.cta)],
+        ["Assistiram até o fim", pctTxt(pct(fim, c.plays)), fmt(fim) + " pessoas"],
+        ["Clicaram em comprar", fmt(clique), pctTxt(pct(clique, cta)) + " de quem viu o botão"],
+        ["Vendas", fmt(vendas), pctTxt(pct(vendas, c.plays)) + " por play com som"]
+      ];
+      $("vk-" + V.id).innerHTML = k.map(function (x) { return '<div class="kpi' + (x[3] ? " destaque" : "") + '"><small>' + x[0] + "</small><strong>" + x[1] + "</strong><span>" + x[2] + "</span></div>"; }).join("");
+      var g = $("vg-" + V.id);
+      if (!base || c.pontos.length < 2) { g.innerHTML = '<div class="vazio">Ainda não há plays com som neste período.</div>'; $("ve-" + V.id).innerHTML = ""; return; }
+      // curva de retenção (% de quem deu play que ainda está assistindo em cada trecho)
+      var W = 1000, H = 220, ml = 40, mb = 24, fimT = c.pontos[c.pontos.length - 1].t || 10;
+      var X = function (t) { return ml + t / fimT * (W - ml - 10); }, Y = function (p) { return 8 + (1 - p / 100) * (H - mb - 8); };
+      var pts = c.pontos.map(function (p) { return { t: p.t, n: p.n, r: Math.min(100, pct(p.n, base)) }; });
+      var svg = '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" role="img" aria-label="Curva de retenção da ' + esc(V.nome) + '">';
+      [0, 25, 50, 75, 100].forEach(function (p) { svg += '<line class="grade" x1="' + ml + '" x2="' + W + '" y1="' + Y(p) + '" y2="' + Y(p) + '"/><text class="eixo" x="0" y="' + (Y(p) + 4) + '">' + p + "%</text>"; });
+      for (var t = 0; t <= fimT; t += fimT > 300 ? 60 : 30) svg += '<text class="eixo" x="' + X(t) + '" y="' + (H - 6) + '" text-anchor="middle">' + mmss(t) + "</text>";
+      var area = "M" + X(0) + " " + Y(0) + pts.map(function (p) { return " L" + X(p.t).toFixed(1) + " " + Y(p.r).toFixed(1); }).join("") + " L" + X(pts[pts.length - 1].t) + " " + Y(0) + "Z";
+      svg += '<path class="vsl-area" d="' + area + '"/>';
+      svg += '<polyline class="vsl-linha" points="' + pts.map(function (p) { return X(p.t).toFixed(1) + "," + Y(p.r).toFixed(1); }).join(" ") + '"/>';
+      if (A && A.base) svg += '<polyline class="vsl-linha-ant" points="' + A.pontos.filter(function (p) { return p.t <= fimT; }).map(function (p) { return X(p.t).toFixed(1) + "," + Y(Math.min(100, pct(p.n, A.base))).toFixed(1); }).join(" ") + '"/>';
+      [[V.pitch, "pitch", "m-pitch", 18], [V.cta, "botão", "m-cta", 32]].forEach(function (m) { if (m[0] <= fimT) svg += '<line class="marca-v ' + m[2] + '" x1="' + X(m[0]) + '" x2="' + X(m[0]) + '" y1="8" y2="' + (H - mb) + '"/><text class="eixo rot ' + m[2] + '" x="' + (X(m[0]) + 4) + '" y="' + m[3] + '">' + m[1] + " " + mmss(m[0]) + "</text>"; });
+      pts.forEach(function (p, i) {
+        var ant = i ? pts[i - 1] : null, perda = ant ? ant.r - p.r : 0;
+        svg += '<rect class="alvo" x="' + (X(p.t) - (W - ml) / pts.length / 2) + '" y="0" width="' + ((W - ml) / pts.length) + '" height="' + (H - mb) + '" data-t="' + p.t + '" data-dica="' + mmss(p.t) + "|" + pctTxt(p.r) + " ainda assistindo · " + fmt(p.n) + " pessoas" + (perda > 0 ? " · −" + pctTxt(perda) + " neste trecho" : "") + '"/>';
+      });
+      g.innerHTML = svg + "</svg>" + '<div class="legenda-vsl"><span><i class="l-atual"></i>Período selecionado</span>' + (A && A.base ? '<span><i class="l-ant"></i>' + esc(rotuloAnterior().replace("vs ", "")) + "</span>" : "") + "</div>";
+      g.querySelectorAll("rect.alvo").forEach(function (r) { r.addEventListener("click", function () { var vid = $("pv-" + V.id); vid.currentTime = Number(r.dataset.t); vid.play().catch(function () {}); }); });
+      // trechos com maior evasão
+      var trechos = []; for (var i = 1; i < pts.length; i++) trechos.push({ de: pts[i - 1].t, ate: pts[i].t, perda: pts[i - 1].r - pts[i].r });
+      var top = trechos.filter(function (x) { return x.perda > 0; }).sort(function (a, b) { return b.perda - a.perda; }).slice(0, 4);
+      $("ve-" + V.id).innerHTML = top.length ? '<h3>Trechos com maior evasão</h3><ol>' + top.map(function (x) {
+        return '<li><span class="ev-t">' + mmss(x.de) + " – " + mmss(x.ate) + '</span><span class="ev-p">−' + pctTxt(x.perda) + ' do público</span><button type="button" data-t="' + x.de + '">▶ ver no vídeo</button></li>';
+      }).join("") + "</ol>" : "";
+      $("ve-" + V.id).querySelectorAll("button[data-t]").forEach(function (b) { b.addEventListener("click", function () { var vid = $("pv-" + V.id); vid.currentTime = Number(b.dataset.t); vid.scrollIntoView({ block: "center", behavior: "smooth" }); vid.play().catch(function () {}); }); });
+    }
+    return { desenhar: desenhar };
+  })();
+
+  /* ===================== Gerenciador de Criativos ===================== */
+  var criativos = (function () {
+    var lista = [], prod = null, modo = "esteira", busca = "", filtro = "";
+    var ST = [
+      ["ideia", "Ideia"], ["producao", "Produção"], ["teste", "Em teste"], ["aprovado", "Aprovado"], ["escala", "Escalando"], ["pausado", "Pausado"], ["reprovado", "Reprovado"]
+    ];
+    var NOME_ST = {}; ST.forEach(function (x) { NOME_ST[x[0]] = x[1]; });
+    var FORMATOS = ["Vídeo", "UGC", "Imagem", "Carrossel", "Estático com texto"];
+    var din = function (n) { return n == null ? "—" : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); };
+    function ultima(c) { return (c.metricas || [])[c.metricas.length - 1] || null; }
+    function totais(c) { var t = { gasto: 0, cliques: 0, impressoes: 0, vendas: 0, receita: 0 }; (c.metricas || []).forEach(function (m) { Object.keys(t).forEach(function (k) { t[k] += m[k] || 0; }); }); return t; }
+    function img(c) { return c.temImagem ? "/api/painel?acao=cr-img&p=" + prod + "&id=" + c.id + "&v=" + (c.imgVer || 1) : ""; }
+    function abrir(p) {
+      prod = p;
+      $("v-criativos").innerHTML = '<div class="vazio">Carregando criativos…</div>';
+      api("criativos", { p: p }).then(function (r) { if (r._status === 401) return telaEntrada(); lista = r.lista || []; desenhar(); });
+    }
+    function desenhar() {
+      var el = $("v-criativos");
+      var ativos = lista.filter(function (c) { return ["teste", "aprovado", "escala"].indexOf(c.status) >= 0; });
+      var decididos = lista.filter(function (c) { return ["aprovado", "escala", "reprovado"].indexOf(c.status) >= 0; });
+      var aprov = lista.filter(function (c) { return ["aprovado", "escala"].indexOf(c.status) >= 0; });
+      var gasto = 0, clq = 0, imp = 0, vend = 0; lista.forEach(function (c) { var t = totais(c); gasto += t.gasto; clq += t.cliques; imp += t.impressoes; vend += t.vendas; });
+      var cpas = lista.map(function (c) { var t = totais(c); return t.vendas ? { c: c, v: t.gasto / t.vendas } : null; }).filter(Boolean).sort(function (a, b) { return a.v - b.v; });
+      var testados = lista.filter(function (c) { return (c.metricas || []).length || ["teste", "aprovado", "escala", "pausado", "reprovado"].indexOf(c.status) >= 0; }).length;
+      var k = [
+        ["Ativos agora", fmt(ativos.length), "em teste, aprovados ou escalando", true],
+        ["Já testados", fmt(testados), fmt(lista.length) + " cadastrados no total"],
+        ["Taxa de aprovação", pctTxt(pct(aprov.length, decididos.length)), fmt(aprov.length) + " de " + fmt(decididos.length) + " decididos"],
+        ["Investido", din(gasto), fmt(vend) + " vendas registradas"],
+        ["CTR médio", imp ? pctTxt(clq / imp * 100) : "—", "cliques ÷ impressões de todos"],
+        ["Melhor CPA", cpas[0] ? din(cpas[0].v) : "—", cpas[0] ? esc(cpas[0].c.nome) : "registre vendas para ver"]
+      ];
+      var vis = lista.filter(function (c) { return (!filtro || c.status === filtro) && (!busca || (c.nome + " " + (c.angulo || "") + " " + (c.notas || "")).toLowerCase().indexOf(busca) >= 0); });
+      el.innerHTML = '<header class="pag-topo"><div><h1>Gerenciador de Criativos</h1><p>Cadastre cada criativo, mude o status arrastando na esteira e registre CTR, CPC e vendas para manter o histórico.</p></div>' +
+        '<button type="button" class="botao-pri" id="cr-novo">＋ Novo criativo</button></header>' +
+        '<section class="kpis">' + k.map(function (x) { return '<div class="kpi' + (x[3] ? " destaque" : "") + '"><small>' + x[0] + "</small><strong>" + x[1] + "</strong><span>" + x[2] + "</span></div>"; }).join("") + "</section>" +
+        '<div class="cr-barra"><div class="abas"><button type="button" data-m="esteira" aria-selected="' + (modo === "esteira") + '">Esteira de testes</button><button type="button" data-m="lista" aria-selected="' + (modo === "lista") + '">Lista</button></div>' +
+        '<input type="search" id="cr-busca" placeholder="Buscar por nome, ângulo ou nota" value="' + esc(busca) + '">' +
+        '<select id="cr-filtro"><option value="">Todos os status</option>' + ST.map(function (x) { return '<option value="' + x[0] + '"' + (filtro === x[0] ? " selected" : "") + ">" + x[1] + "</option>"; }).join("") + "</select></div>" +
+        (modo === "esteira" ? esteira(vis) : tabela(vis));
+      $("cr-novo").addEventListener("click", function () { editar(null); });
+      el.querySelectorAll(".cr-barra .abas button").forEach(function (b) { b.addEventListener("click", function () { modo = b.dataset.m; desenhar(); }); });
+      $("cr-busca").addEventListener("input", function () { busca = this.value.toLowerCase(); var pos = this.selectionStart; desenhar(); var i = $("cr-busca"); i.focus(); i.setSelectionRange(pos, pos); });
+      $("cr-filtro").addEventListener("change", function () { filtro = this.value; desenhar(); });
+      el.querySelectorAll("[data-cr]").forEach(function (x) { x.addEventListener("click", function (e) { if (e.target.closest("a")) return; editar(x.dataset.cr); }); });
+      // arrastar entre colunas muda o status
+      el.querySelectorAll(".cr-cartao[draggable]").forEach(function (c) { c.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", c.dataset.cr); c.classList.add("arrastando"); }); c.addEventListener("dragend", function () { c.classList.remove("arrastando"); }); });
+      el.querySelectorAll(".cr-coluna").forEach(function (col) {
+        col.addEventListener("dragover", function (e) { e.preventDefault(); col.classList.add("sobre"); });
+        col.addEventListener("dragleave", function () { col.classList.remove("sobre"); });
+        col.addEventListener("drop", function (e) {
+          e.preventDefault(); col.classList.remove("sobre");
+          var c = lista.find(function (x) { return x.id === e.dataTransfer.getData("text/plain"); });
+          if (!c || c.status === col.dataset.st) return;
+          var corpo = Object.assign({}, c, { status: col.dataset.st }); delete corpo.metricas;
+          c.status = col.dataset.st; desenhar();
+          api("criativo", { p: prod }, corpo).then(function (r) { if (r.ok) { Object.assign(c, r.criativo); desenhar(); } });
+        });
+      });
+    }
+    function chips(c) {
+      var m = ultima(c), t = totais(c);
+      if (!m) return '<span class="cr-sem">sem métricas</span>';
+      return '<span class="cr-chip">CTR <b>' + (m.ctr != null ? String(m.ctr).replace(".", ",") + "%" : "—") + '</b></span><span class="cr-chip">CPC <b>' + (m.cpc != null ? din(m.cpc) : "—") + "</b></span>" +
+        (t.vendas ? '<span class="cr-chip">CPA <b>' + din(t.gasto / t.vendas) + "</b></span>" : "");
+    }
+    function esteira(vis) {
+      return '<div class="cr-esteira">' + ST.map(function (s) {
+        var cs = vis.filter(function (c) { return c.status === s[0]; });
+        return '<div class="cr-coluna st-' + s[0] + '" data-st="' + s[0] + '"><h3>' + s[1] + "<span>" + cs.length + "</span></h3>" +
+          cs.map(function (c) {
+            return '<div class="cr-cartao" draggable="true" data-cr="' + c.id + '">' + (c.temImagem ? '<img src="' + img(c) + '" alt="" loading="lazy">' : '<div class="cr-semimg">' + esc((c.formato || "criativo").slice(0, 12)) + "</div>") +
+              "<strong>" + esc(c.nome) + "</strong><small>" + esc(c.data ? c.data.split("-").reverse().join("/") : "") + (c.formato ? " · " + esc(c.formato) : "") + '</small><div class="cr-chips">' + chips(c) + "</div></div>";
+          }).join("") + (cs.length ? "" : '<p class="cr-vazio">arraste um criativo para cá</p>') + "</div>";
+      }).join("") + "</div>";
+    }
+    function tabela(vis) {
+      if (!vis.length) return '<div class="vazio">Nenhum criativo ainda. Clique em “Novo criativo”.</div>';
+      return '<div class="cr-tabela"><div class="cr-lin cab"><span></span><span>Criativo</span><span>Status</span><span>Criado</span><span class="num">Investido</span><span class="num">CTR</span><span class="num">CPC</span><span class="num">Vendas</span><span class="num">CPA</span><span class="num">ROAS</span></div>' +
+        vis.map(function (c) {
+          var t = totais(c), m = ultima(c) || {};
+          return '<div class="cr-lin" data-cr="' + c.id + '">' + (c.temImagem ? '<img src="' + img(c) + '" alt="" loading="lazy">' : '<span class="cr-semimg mini"></span>') +
+            "<span><strong>" + esc(c.nome) + "</strong><small>" + esc(c.angulo || c.formato || "") + '</small></span><span><i class="st st-' + c.status + '">' + NOME_ST[c.status] + "</i></span><span>" + esc((c.data || "").split("-").reverse().join("/")) + "</span>" +
+            '<span class="num">' + din(t.gasto) + '</span><span class="num">' + (t.impressoes ? pctTxt(t.cliques / t.impressoes * 100) : m.ctr != null ? m.ctr + "%" : "—") + '</span><span class="num">' + (t.cliques ? din(t.gasto / t.cliques) : din(m.cpc)) + '</span><span class="num">' + fmt(t.vendas) + '</span><span class="num">' + (t.vendas ? din(t.gasto / t.vendas) : "—") + '</span><span class="num">' + (t.gasto && t.receita ? (t.receita / t.gasto).toFixed(2).replace(".", ",") + "x" : "—") + "</span></div>";
+        }).join("") + "</div>";
+    }
+    // Cadastro / edição
+    function reduzirImagem(arquivo, cb) {
+      var r = new FileReader();
+      r.onload = function () {
+        var im = new Image(); im.onload = function () {
+          var k = Math.min(1, 960 / Math.max(im.width, im.height)), cv = document.createElement("canvas");
+          cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k);
+          cv.getContext("2d").drawImage(im, 0, 0, cv.width, cv.height);
+          cb(cv.toDataURL("image/jpeg", 0.82));
+        }; im.src = r.result;
+      };
+      r.readAsDataURL(arquivo);
+    }
+    function editar(id) {
+      var c = lista.find(function (x) { return x.id === id; }) || { nome: "", data: S.hoje, status: "teste", formato: "Vídeo", plataforma: "Meta", metricas: [], historico: [] };
+      var nova = null, f = $("form-criativo"), dlg = $("d-criativo");
+      var linhas = (c.metricas || []).map(function (m, i) {
+        return "<tr><td>" + esc(m.data.split("-").reverse().join("/")) + "</td><td>" + din(m.gasto) + "</td><td>" + fmt(m.impressoes) + "</td><td>" + fmt(m.cliques) + "</td><td>" + (m.ctr != null ? String(m.ctr).replace(".", ",") + "%" : "—") + "</td><td>" + din(m.cpc) + "</td><td>" + fmt(m.vendas) + "</td><td>" + din(m.cpa) + "</td><td>" + (m.roas != null ? String(m.roas).replace(".", ",") + "x" : "—") + '</td><td><button type="button" class="tira" data-i="' + i + '" title="Remover esta linha">×</button></td></tr>';
+      }).join("");
+      f.innerHTML = '<h3>' + (id ? "Editar criativo" : "Novo criativo") + "</h3>" +
+        '<div class="cr-form"><label class="cr-img" id="cr-solta"><input type="file" accept="image/*" id="cr-arquivo" hidden>' +
+          (c.temImagem ? '<img src="' + img(c) + '" alt="" id="cr-prev">' : '<span id="cr-prev-txt">Solte a imagem aqui, cole (Cmd+V) ou clique para escolher</span><img alt="" id="cr-prev" hidden>') + "</label>" +
+        '<div class="cr-campos">' +
+          '<label class="cheio">Nome do criativo<input id="c-nome" required maxlength="120" value="' + esc(c.nome) + '" placeholder="Ex.: CJ-12 · Alerta jejum com água"></label>' +
+          '<label>Data de criação<input type="date" id="c-data" value="' + esc(c.data || S.hoje) + '"></label>' +
+          '<label>Status<select id="c-status">' + ST.map(function (x) { return '<option value="' + x[0] + '"' + (c.status === x[0] ? " selected" : "") + ">" + x[1] + "</option>"; }).join("") + "</select></label>" +
+          '<label>Formato<select id="c-formato">' + FORMATOS.map(function (x) { return "<option" + (c.formato === x ? " selected" : "") + ">" + x + "</option>"; }).join("") + "</select></label>" +
+          '<label>Plataforma<input id="c-plat" value="' + esc(c.plataforma || "Meta") + '"></label>' +
+          '<label class="cheio">Ângulo / gancho<input id="c-angulo" maxlength="160" value="' + esc(c.angulo || "") + '" placeholder="Ex.: alerta “cuidado com o jejum com água”"></label>' +
+          '<label>Campanha (UTM)<input id="c-camp" maxlength="80" value="' + esc(c.campanha || "") + '"></label>' +
+          '<label>Link do anúncio<input id="c-link" type="url" value="' + esc(c.link || "") + '" placeholder="https://"></label>' +
+          '<label class="cheio">Notas<textarea id="c-notas" rows="2" maxlength="2000">' + esc(c.notas || "") + "</textarea></label>" +
+        "</div></div>" +
+        '<h4>Métricas <small>registre quando quiser · CTR, CPC, CPM, CPA e ROAS são calculados sozinhos se faltar</small></h4>' +
+        '<div class="cr-met"><table><thead><tr><th>Data</th><th>Investido</th><th>Impressões</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Vendas</th><th>CPA</th><th>ROAS</th><th></th></tr></thead><tbody>' + (linhas || '<tr><td colspan="10" class="cr-vazio">nenhuma métrica ainda</td></tr>') + "</tbody></table></div>" +
+        '<div class="cr-nova-met"><input type="date" id="m-data" value="' + S.hoje + '"><input id="m-gasto" inputmode="decimal" placeholder="Investido R$"><input id="m-imp" inputmode="numeric" placeholder="Impressões"><input id="m-cli" inputmode="numeric" placeholder="Cliques"><input id="m-ctr" inputmode="decimal" placeholder="CTR %"><input id="m-cpc" inputmode="decimal" placeholder="CPC R$"><input id="m-vendas" inputmode="numeric" placeholder="Vendas"><input id="m-rec" inputmode="decimal" placeholder="Receita R$"></div>' +
+        ((c.historico || []).length ? '<p class="cr-hist">Histórico: ' + c.historico.slice(-6).map(function (h) { return esc(new Date(h.em).toLocaleDateString("pt-BR")) + " " + esc(h.por) + ": " + NOME_ST[h.de] + " → " + NOME_ST[h.para]; }).join(" · ") + "</p>" : "") +
+        '<p id="c-msg" class="erro" hidden></p>' +
+        '<div class="acoes">' + (id ? '<button type="button" class="sec perigo" id="c-excluir">Excluir</button>' : "") + '<span class="esp"></span><button type="button" class="sec" id="c-cancelar">Cancelar</button><button type="submit">Salvar</button></div>';
+      var solta = $("cr-solta"), prev = $("cr-prev");
+      function usar(arq) { if (!arq || !/^image\//.test(arq.type)) return; reduzirImagem(arq, function (url) { nova = url; prev.src = url; prev.hidden = false; var t = $("cr-prev-txt"); if (t) t.remove(); }); }
+      $("cr-arquivo").addEventListener("change", function () { usar(this.files[0]); });
+      solta.addEventListener("dragover", function (e) { e.preventDefault(); solta.classList.add("sobre"); });
+      solta.addEventListener("dragleave", function () { solta.classList.remove("sobre"); });
+      solta.addEventListener("drop", function (e) { e.preventDefault(); solta.classList.remove("sobre"); usar(e.dataTransfer.files[0]); });
+      f.onpaste = function (e) { var it = [].slice.call(e.clipboardData.items || []).find(function (x) { return /^image\//.test(x.type); }); if (it) usar(it.getAsFile()); };
+      $("c-cancelar").onclick = function () { dlg.close(); };
+      f.querySelectorAll(".tira").forEach(function (b) { b.onclick = function () { salvar({ removerMetrica: Number(b.dataset.i) }, true); }; });
+      if (id) $("c-excluir").onclick = function () {
+        if (!window.confirm("Excluir o criativo “" + c.nome + "” e todo o histórico dele? Não dá para desfazer.")) return;
+        api("cr-excluir", { p: prod }, { id: id }).then(function () { lista = lista.filter(function (x) { return x.id !== id; }); dlg.close(); desenhar(); });
+      };
+      function salvar(extra, manter) {
+        var b = { id: c.id, nome: $("c-nome").value.trim(), data: $("c-data").value, status: $("c-status").value, formato: $("c-formato").value, plataforma: $("c-plat").value,
+          angulo: $("c-angulo").value, campanha: $("c-camp").value, link: $("c-link").value, notas: $("c-notas").value };
+        if (nova) b.imagem = nova;
+        var m = { data: $("m-data").value, gasto: $("m-gasto").value, impressoes: $("m-imp").value, cliques: $("m-cli").value, ctr: $("m-ctr").value, cpc: $("m-cpc").value, vendas: $("m-vendas").value, receita: $("m-rec").value };
+        if (["gasto", "impressoes", "cliques", "ctr", "cpc", "vendas", "receita"].some(function (k2) { return String(m[k2]).trim() !== ""; })) b.metrica = m;
+        Object.assign(b, extra || {});
+        if (!b.nome) { var msg = $("c-msg"); msg.textContent = "Dê um nome ao criativo."; msg.hidden = false; return; }
+        api("criativo", { p: prod }, b).then(function (r) {
+          if (!r.ok) { var msg = $("c-msg"); msg.textContent = r.erro || "Não foi possível salvar agora."; msg.hidden = false; return; }
+          var i = lista.findIndex(function (x) { return x.id === r.criativo.id; });
+          if (i >= 0) lista[i] = r.criativo; else lista.unshift(r.criativo);
+          desenhar();
+          if (manter) editar(r.criativo.id); else dlg.close();
+        });
+      }
+      f.onsubmit = function (e) { e.preventDefault(); salvar(); };
+      if (!dlg.open) dlg.showModal();
+    }
+    return { abrir: abrir };
+  })();
+
+  /* ===================== Configurações ===================== */
+  var configPag = (function () {
+    function opc(nome, chave, ops, atual) {
+      return '<div class="cfg-linha"><div><strong>' + nome[0] + "</strong><small>" + nome[1] + '</small></div><div class="abas" data-cfg="' + chave + '">' +
+        ops.map(function (o) { return '<button type="button" data-val="' + o[0] + '" aria-selected="' + (String(atual) === String(o[0])) + '">' + o[1] + "</button>"; }).join("") + "</div></div>";
+    }
+    function desenhar() {
+      var el = $("v-config");
+      el.innerHTML = '<header class="pag-topo"><div><h1>Configurações</h1><p>Valem para este navegador. Cada pessoa da equipe ajusta as suas.</p></div></header>' +
+        '<section class="bloco cfg">' +
+          opc(["Tema", "Escuro, claro ou seguindo o sistema do computador"], "tema", [["escuro", "Escuro"], ["claro", "Claro"], ["auto", "Automático"]], CFG.tema || "escuro") +
+          opc(["Período ao abrir", "Qual período os gerenciadores mostram primeiro"], "periodo", [["hoje", "Hoje"], ["ontem", "Ontem"], ["7", "7 dias"], ["30", "30 dias"], ["mes", "Este mês"]], CFG.periodo || "hoje") +
+          opc(["Salto ao entrar", "A viagem pela galáxia depois do login"], "salto", [[true, "Ligado"], [false, "Desligado"]], CFG.salto !== false) +
+          opc(["Nave do Flow", "A nave que percorre o fluxo uma vez por dia"], "nave", [[true, "Ligada"], [false, "Desligada"]], CFG.nave !== false) +
+        "</section>" +
+        '<section class="bloco cfg"><div class="cfg-linha"><div><strong>Conta</strong><small>' + esc(S.eu.nome) + " · " + esc(S.eu.email) + '</small></div><div class="cfg-acoes"><button type="button" class="sec" id="cfg-senha">Trocar senha</button><button type="button" class="sec" id="cfg-sair">Sair</button></div></div></section>';
+      el.querySelectorAll("[data-cfg]").forEach(function (g) {
+        g.querySelectorAll("button").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var v = b.dataset.val; v = v === "true" ? true : v === "false" ? false : v;
+            CFG[g.dataset.cfg] = v; salvarCfg(); aplicarTema();
+            if (g.dataset.cfg === "periodo") { S.p = v; try { sessionStorage.removeItem("painel_p"); } catch (e) {} marcarFiltros(); }
+            desenhar();
+          });
+        });
+      });
+      $("cfg-senha").onclick = function () { $("u-senha").click(); };
+      $("cfg-sair").onclick = function () { $("u-sair").click(); };
+    }
+    return { desenhar: desenhar };
+  })();
 
   abrirPainel();
 })();

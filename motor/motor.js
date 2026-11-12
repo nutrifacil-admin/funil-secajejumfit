@@ -407,6 +407,10 @@
     if (!src) { p.classList.add("sem-src"); $(".vp-t1").textContent = "Cole o link do vídeo"; $(".vp-t2").textContent = "SJ_CFG.vsl.src"; p.classList.add("show-auto"); return w; }
 
     var v = $("video"), fake = $(".vp-fake"), bezel = $(".vp-bezel");
+    // Flowex: retenção da VSL (carregou, deu play com som, cada 10 s assistidos com som, pitch, CTA e fim)
+    function rastroVsl(x) { try { var R = TOP.SJ_RASTRO || window.SJ_RASTRO; if (R && V.id) R("vsl", V.id + "." + x); } catch (e) {} }
+    var marcasVsl = {};
+    rastroVsl("carregou");
     // escala da caixa do autoplay (desenhada em 1080 px de largura) e tamanho da fonte por faixa, como a vTurb
     function medir() {
       var lw = p.getBoundingClientRect().width || 1;
@@ -451,6 +455,7 @@
     }
     function tocar() { var pr = v.play(); if (pr && pr.catch) pr.catch(function () { cl("carregando", false); }); }
     function tocarComSom(desde) {
+      rastroVsl("play");
       comSom = true; v.muted = false; ultimoToque = Date.now();
       cl("show-auto", false); cl("in-resume", false); cl("ja-tocou", true);
       var ir = function () { if (desde != null && Math.abs(v.currentTime - desde) > 0.5) v.currentTime = desde; tocar(); };
@@ -508,17 +513,18 @@
       var x = Math.min(1, v.currentTime / dur) - 1;
       fake.style.width = 100 * Math.sqrt(1 - x * x) + "%";
       // botão pelo tempo do vídeo, com ou sem som (quem assiste mudo lendo legenda também chega na oferta)
-      if (cta && !ctaFeito && v.currentTime >= cta) { ctaFeito = true; mem.cta = 1; guardar(); liberarCta(); }
+      if (cta && !ctaFeito && v.currentTime >= cta) { ctaFeito = true; mem.cta = 1; guardar(); liberarCta(); rastroVsl("cta"); }
+      if (comSom) { var seg = Math.floor(v.currentTime / 10) * 10; if (!marcasVsl[seg]) { marcasVsl[seg] = 1; rastroVsl("t" + ("00" + seg).slice(-4)); } }
       if (!comSom) return;
       if (Math.abs(v.currentTime - ultimo) >= 1) { ultimo = v.currentTime; mem.t = v.currentTime; guardar(); }
       if (pitch && !pitchFeito && v.currentTime >= pitch) {
-        pitchFeito = true; mem.pitch = 1; guardar();
+        pitchFeito = true; mem.pitch = 1; guardar(); rastroVsl("pitch");
         var fbq = TOP.fbq || window.fbq;
         if (fbq) { if (V.pixelId) fbq("trackSingleCustom", V.pixelId, V.pixelEvento || "PitchVSL"); else fbq("trackCustom", V.pixelEvento || "PitchVSL"); }
         try { TOP.dispatchEvent(new CustomEvent("vsl:pitch")); } catch (e) {}
       }
     });
-    v.addEventListener("ended", function () { mem.fim = 1; guardar(); });
+    v.addEventListener("ended", function () { mem.fim = 1; guardar(); rastroVsl("fim"); });
     if (/\.m3u8(\?|$)/.test(src) && !v.canPlayType("application/vnd.apple.mpegurl")) carregarHls(iniciarFonte); else iniciarFonte();
     return w;
   };

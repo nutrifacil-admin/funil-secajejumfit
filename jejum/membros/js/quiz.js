@@ -614,7 +614,7 @@
     if (!vsl.abertoEm) vsl.abertoEm = Date.now();
     var v = QUIZ.vsl;
     window.SJ_AVANCAR = function () {};
-    window.SJ_CFG = { cor: v.cor, texto: '#ffffff', vsl: { src: v.src, capa: v.capa, pitch: v.pitch, cta: QUIZ.atrasoOfertaSegundos,
+    window.SJ_CFG = { cor: v.cor, texto: '#ffffff', vsl: { id: 'upsell', src: v.src, capa: v.capa, pitch: v.pitch, cta: QUIZ.atrasoOfertaSegundos,
       autoplayTitulo: v.titulo, autoplayTexto: v.texto, pixelEvento: v.pixelEvento } };
     window.SJ_TELAS = window.SJ_TELAS || {};
     window.SJ_TELAS.UP = [{ tipo: 'video' }];

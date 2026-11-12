@@ -13,6 +13,19 @@ const USUARIOS = {
 };
 const SENHA_INICIAL = "9e126aaec183217919ae366dd0896afa:4251fbc9f9c7f3d1d75b66cd11c91826ecf965022b08448041d18134940d99a1";
 const FUNIS = { jejum: "Seca Jejum" };
+// Produtos do Flowex: cada um tem o seu funil (dados) e as suas VSLs. Novo produto = novo item aqui.
+const PRODUTOS = {
+  jejum: {
+    nome: "Seca Jejum", sub: "Jejum com água · infoproduto", dominio: "secajejum.fit", cor: "#22c55e", sigla: "SJ", funil: "jejum",
+    vsls: [
+      { id: "front", nome: "VSL do front", onde: "Tela 34 do quiz (oferta do Plano de Jejum)", pitch: 175, cta: 164,
+        src: "https://vz-fc9df7e8-845.b-cdn.net/d826a593-fa31-4b6f-9aa0-45c29e6b5fe1/playlist.m3u8", clique: "checkout", venda: "front", grupoClique: "front" },
+      { id: "upsell", nome: "VSL do upsell", onde: "Oferta do Chá Turbo na área de membros", pitch: 210, cta: 249,
+        src: "https://vz-fc9df7e8-845.b-cdn.net/2a5ee7a2-ae5c-4d58-8517-d8129560f54a/playlist.m3u8", clique: "oferta-quero", venda: "upsell", grupoClique: "pos" }
+    ]
+  }
+};
+const STATUS_CRIATIVO = ["ideia", "producao", "teste", "aprovado", "escala", "pausado", "reprovado"];
 
 const COOKIE = "sjp_s", DURA = 60 * 60 * 24 * 30;
 const hashSenha = (senha, sal) => crypto.scryptSync(String(senha), sal, 32, { N: 16384, r: 8, p: 1 }).toString("hex");
@@ -80,7 +93,60 @@ module.exports = async (req, res) => {
   const email = await quem(req);
   if (!email) return json(res, 401, { ok: false, erro: "login" });
 
-  if (acao === "eu") return json(res, 200, { ok: true, nome: USUARIOS[email].nome, email, funis: FUNIS, hoje: hojeBR() });
+  if (acao === "eu") return json(res, 200, { ok: true, nome: USUARIOS[email].nome, email, funis: FUNIS, produtos: PRODUTOS, hoje: hojeBR() });
+
+  /* ---------- Criativos (preenchidos à mão pela equipe; ficam no histórico) ---------- */
+  if (acao === "criativos" || acao === "criativo" || acao === "cr-excluir" || acao === "cr-img") {
+    const prod = PRODUTOS[q.get("p")] ? q.get("p") : null;
+    if (!prod) return json(res, 400, { ok: false, erro: "Produto inválido." });
+    const CH = "sjf:cr:" + prod, txt = (v, n) => String(v == null ? "" : v).slice(0, n);
+    const num = (v) => { const n = Number(String(v).replace(",", ".")); return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null; };
+    const lerTodos = async () => { const v = await cmd("GET", CH); try { return v ? JSON.parse(v) : []; } catch (e) { return []; } };
+    if (acao === "cr-img") {
+      const img = await cmd("GET", CH + ":img:" + txt(q.get("id"), 40));
+      if (!img) { res.statusCode = 404; return res.end(); }
+      const m = String(img).match(/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/);
+      if (!m) { res.statusCode = 404; return res.end(); }
+      res.statusCode = 200; res.setHeader("Content-Type", m[1]); res.setHeader("Cache-Control", "private, max-age=86400");
+      return res.end(Buffer.from(m[2], "base64"));
+    }
+    if (acao === "criativos") return json(res, 200, { ok: true, lista: await lerTodos() });
+    if (req.method !== "POST") return json(res, 405, { ok: false });
+    const b = await corpo(req), lista = await lerTodos(), quem = USUARIOS[email].nome, agora = new Date().toISOString();
+    if (acao === "cr-excluir") {
+      const nova = lista.filter((c) => c.id !== b.id);
+      await cmd("SET", CH, JSON.stringify(nova)); await cmd("SET", CH + ":img:" + txt(b.id, 40), "");
+      return json(res, 200, { ok: true });
+    }
+    // salvar (novo ou edição) + opcionalmente uma nova linha de métricas
+    let c = lista.find((x) => x.id === b.id);
+    if (!c) { c = { id: crypto.randomBytes(6).toString("hex"), criadoEm: agora, criadoPor: quem, metricas: [], historico: [] }; lista.unshift(c); }
+    const antes = c.status;
+    c.nome = txt(b.nome, 120) || c.nome || "Criativo sem nome";
+    c.data = /^\d{4}-\d{2}-\d{2}$/.test(b.data) ? b.data : c.data || hojeBR();
+    c.status = STATUS_CRIATIVO.includes(b.status) ? b.status : c.status || "teste";
+    c.formato = txt(b.formato, 30) || c.formato || "";
+    c.angulo = txt(b.angulo, 160); c.plataforma = txt(b.plataforma, 40) || c.plataforma || "Meta";
+    c.link = /^https?:\/\//.test(b.link || "") ? txt(b.link, 400) : ""; c.notas = txt(b.notas, 2000); c.campanha = txt(b.campanha, 80);
+    c.atualizadoEm = agora; c.atualizadoPor = quem;
+    if (antes && antes !== c.status) c.historico = (c.historico || []).concat({ em: agora, por: quem, de: antes, para: c.status }).slice(-50);
+    if (b.imagem && /^data:image\/(jpeg|png|webp);base64,/.test(b.imagem) && b.imagem.length < 900000) {
+      await cmd("SET", CH + ":img:" + c.id, b.imagem); c.temImagem = true; c.imgVer = Date.now();
+    }
+    if (b.metrica) {
+      const m = b.metrica, r = { data: /^\d{4}-\d{2}-\d{2}$/.test(m.data) ? m.data : hojeBR(), por: quem };
+      ["gasto", "impressoes", "cliques", "ctr", "cpc", "cpm", "vendas", "receita"].forEach((k) => { const v = num(m[k]); if (v != null) r[k] = v; });
+      if (r.ctr == null && r.cliques != null && r.impressoes) r.ctr = Math.round(r.cliques / r.impressoes * 10000) / 100;
+      if (r.cpc == null && r.gasto != null && r.cliques) r.cpc = Math.round(r.gasto / r.cliques * 100) / 100;
+      if (r.cpm == null && r.gasto != null && r.impressoes) r.cpm = Math.round(r.gasto / r.impressoes * 100000) / 100;
+      if (r.gasto != null && r.vendas) r.cpa = Math.round(r.gasto / r.vendas * 100) / 100;
+      if (r.gasto && r.receita != null) r.roas = Math.round(r.receita / r.gasto * 100) / 100;
+      c.metricas = (c.metricas || []).concat(r).sort((a, z) => (a.data < z.data ? -1 : 1)).slice(-200);
+    }
+    if (b.removerMetrica != null) c.metricas = (c.metricas || []).filter((x, i) => i !== Number(b.removerMetrica));
+    await cmd("SET", CH, JSON.stringify(lista.slice(0, 500)));
+    return json(res, 200, { ok: true, criativo: c });
+  }
 
   if (acao === "senha") {
     if (req.method !== "POST") return json(res, 405, { ok: false });
@@ -108,7 +174,7 @@ module.exports = async (req, res) => {
 
   if (acao === "dados") {
     const f = FUNIS[q.get("f")] ? q.get("f") : "jejum";
-    const grupos = q.get("g") === "todos" ? ["front", "pos"] : [q.get("g") === "pos" ? "pos" : "front"];
+    const grupos = q.get("g") === "todos" ? ["front", "pos", "vsl"] : [["pos", "vsl"].includes(q.get("g")) ? q.get("g") : "front"];
     const lista = dias(q.get("de") || hojeBR(), q.get("ate") || hojeBR());
     if (!lista) return json(res, 400, { ok: false, erro: "Período inválido." });
     const camp = String(q.get("c") || "");

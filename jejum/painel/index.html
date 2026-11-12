@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/painel/painel.css?v=5">
+  <link rel="stylesheet" href="/painel/painel.css?v=6">
 </head>
 <body>
   <!-- Entrada: galáxia de dados -->
@@ -34,18 +34,26 @@
   <!-- Painel -->
   <div id="painel" class="painel" hidden>
     <header class="topo">
-      <div class="marca"><svg class="flowex-logo" viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="fxg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7dd3fc"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><path d="M7 28c6 0 6-16 13-16s7 16 13 16" fill="none" stroke="url(#fxg2)" stroke-width="2.6" stroke-linecap="round"/><circle cx="7" cy="28" r="3.6" fill="#7dd3fc"/><circle cx="20" cy="12" r="3.6" fill="#9db0ff"/><circle cx="33" cy="28" r="3.6" fill="#a78bfa"/></svg>Flowex<span class="beta">beta</span></div>
-      <label class="seletor-funil"><span>Funil</span><select id="f-funil"></select></label>
+      <a class="marca" href="#/" title="Início"><svg class="flowex-logo" viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="fxg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7dd3fc"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><path d="M7 28c6 0 6-16 13-16s7 16 13 16" fill="none" stroke="url(#fxg2)" stroke-width="2.6" stroke-linecap="round"/><circle cx="7" cy="28" r="3.6" fill="#7dd3fc"/><circle cx="20" cy="12" r="3.6" fill="#9db0ff"/><circle cx="33" cy="28" r="3.6" fill="#a78bfa"/></svg>Flowex<span class="beta">beta</span></a>
+      <nav class="trilha" id="trilha" aria-label="Onde você está"></nav>
       <div class="usuario">
         <button id="u-botao" type="button" aria-haspopup="true" aria-expanded="false"><span id="u-avatar" class="avatar"></span><span><small>Olá,</small><strong id="u-nome"></strong></span></button>
         <div id="u-menu" class="menu" hidden>
+          <a href="#/config" class="menu-link">Configurações</a>
           <button type="button" id="u-senha">Trocar minha senha</button>
           <button type="button" id="u-sair">Sair</button>
         </div>
       </div>
     </header>
 
-    <div class="filtros">
+    <!-- Início: os produtos -->
+    <section id="v-home" class="visao-pag" hidden></section>
+    <!-- Configurações -->
+    <section id="v-config" class="visao-pag" hidden></section>
+    <!-- Criativos -->
+    <section id="v-criativos" class="visao-pag" hidden></section>
+
+    <div class="filtros" id="filtros">
       <div class="abas" role="tablist">
         <button type="button" role="tab" data-aba="front" aria-selected="true">Front</button>
         <button type="button" role="tab" data-aba="ofertas" aria-selected="false">Upsell e Downsell</button>
@@ -64,6 +72,10 @@
       <button type="button" id="f-atualizar" class="atualizar" title="Atualizar agora"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4.5h-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="f-hora">—</span></button>
     </div>
 
+    <!-- VSLs -->
+    <section id="v-vsl" class="visao-pag" hidden></section>
+
+    <div id="v-funil" class="visao-pag" hidden>
     <section id="kpis" class="kpis" aria-label="Resumo"></section>
     <section id="decisoes" class="decisoes" aria-label="Decisões no upsell e no downsell" hidden></section>
 
@@ -104,7 +116,13 @@
     </section>
 
     <p class="nota">Vendas e receita vêm da Cakto e mostram todas as campanhas. Os contadores começaram a valer quando o painel entrou no ar.</p>
+    </div>
   </div>
+
+  <!-- Criativo: cadastro e edição -->
+  <dialog id="d-criativo" class="dialogo largo">
+    <form id="form-criativo" method="dialog"></form>
+  </dialog>
 
   <div id="tooltip" class="tooltip" hidden></div>
 
@@ -118,7 +136,7 @@
     </form>
   </dialog>
 
-  <script src="/painel/mapa.js?v=3"></script>
-  <script src="/painel/painel.js?v=5"></script>
+  <script src="/painel/mapa.js?v=4"></script>
+  <script src="/painel/painel.js?v=6"></script>
 </body>
 </html>
