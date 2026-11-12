@@ -1,0 +1,238 @@
+/* Quiz do upsell — tema escuro da área de membros, estrutura do quiz do front. */
+
+/* ---------- Cabeçalho: seta, logo e progresso ---------- */
+.quiz-topo { max-width: 560px; margin: 0 auto; padding: 14px 16px 0; }
+.quiz-topo-linha { position: relative; display: flex; align-items: center; justify-content: center; min-height: 42px; }
+.quiz-topo .seta-voltar { position: absolute; left: 0; top: 0; cursor: pointer; }
+.quiz-topo .seta-voltar[hidden] { display: none; }
+.quiz-logo { height: 26px; width: auto; }
+.quiz-progresso { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+.quiz-progresso[hidden] { display: none; }
+.quiz-barra { flex: 1; height: 8px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; }
+.quiz-barra span { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, var(--verde), #19b38d); transition: width .35s ease; }
+.quiz-etapa { font-size: .85rem; font-weight: 700; color: var(--texto-suave); white-space: nowrap; }
+
+/* ---------- Estrutura das telas ---------- */
+.quiz { max-width: 560px; margin: 0 auto; padding: 0 16px 48px; }
+.quiz-tela { padding-top: 28px; display: flex; flex-direction: column; gap: 18px; animation: entrar .3s ease; }
+@keyframes entrar { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.quiz-centro { min-height: calc(100vh - 140px); min-height: calc(100dvh - 140px); justify-content: center; text-align: center; align-items: center; }
+.quiz-titulo { font-size: clamp(1.45rem, 6vw, 1.9rem); line-height: 1.2; font-weight: 800; text-align: center; }
+.quiz-subtitulo { font-size: 1.15rem; font-weight: 700; text-align: center; color: var(--texto-claro); }
+.quiz-texto { color: var(--texto-suave); font-size: 1.02rem; text-align: center; }
+.quiz-texto strong { color: var(--texto-claro); }
+.destaque-amarelo { color: var(--amarelo) !important; }
+.quiz-nota { color: #7c8394; font-size: .85rem; text-align: center; }
+.quiz-btn { width: 100%; padding: 16px 20px; font-size: 1.1rem; border-radius: 12px; background: #12a07f; }
+.quiz-btn:hover { background: #0e8a6d; }
+
+.quiz-capa { width: min(260px, 70vw); height: auto; aspect-ratio: 1; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+/* Card no padrão da tela de login (verde-escuro), sem imagem */
+.quiz-card {
+  width: 100%; display: flex; flex-direction: column; align-items: center; gap: 16px;
+  padding: 30px 22px; border-radius: 16px; text-align: center;
+  background: linear-gradient(165deg, #134a3e 0%, #0c2f28 100%);
+  border: 1px solid rgba(14,122,98,.45); box-shadow: 0 8px 30px rgba(0,0,0,.4);
+}
+.quiz-card .quiz-texto { color: #b5cfc7; }
+.quiz-card .quiz-passos li { background: rgba(0,0,0,.25); color: #cfe3dc; }
+.quiz-etiqueta {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 99px;
+  background: rgba(242,179,33,.14); color: var(--amarelo); font-weight: 700; font-size: .92rem;
+}
+.quiz-passos { list-style: none; margin: 4px 0 6px; padding: 0; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.quiz-passos li {
+  display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 10px;
+  background: var(--escuro-card); color: var(--texto-suave); font-size: .9rem; font-weight: 600;
+}
+
+/* ---------- Opções ---------- */
+.quiz-opcoes { display: flex; flex-direction: column; gap: 12px; }
+.quiz-opcoes.duas { flex-direction: row; }
+.quiz-opcoes.duas .quiz-opcao { flex: 1; flex-direction: column; justify-content: center; padding: 26px 12px; font-size: 1.15rem; }
+.quiz-opcoes.duas .quiz-opcao-icone { font-size: 2.6rem; width: auto; height: auto; background: none; }
+.quiz-opcao {
+  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+  padding: 18px 18px; border-radius: 14px; cursor: pointer;
+  background: var(--escuro-card); color: var(--texto-claro);
+  border: 2px solid #343a48; font: inherit; font-size: 1.08rem; font-weight: 600;
+  transition: border-color .15s, background .15s, transform .1s;
+}
+.quiz-opcao:hover { border-color: #19b38d; }
+.quiz-opcao:active { transform: scale(.98); }
+.quiz-opcao.marcada { border-color: #19b38d; background: rgba(14,122,98,.22); }
+.quiz-opcao-icone {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,.06); font-size: 1.5rem;
+}
+
+/* ---------- Régua (idade, altura, peso) ---------- */
+.regua { display: flex; flex-direction: column; gap: 14px; padding: 18px 0 6px; }
+.regua-valor { display: flex; align-items: center; justify-content: center; gap: 22px; }
+.regua-valor output { min-width: 150px; text-align: center; font-size: 3.4rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.regua-valor output small { font-size: 1.2rem; font-weight: 600; color: var(--texto-suave); margin-left: 6px; }
+.regua-mais-menos {
+  flex: none; width: 46px; height: 46px; border-radius: 50%; cursor: pointer;
+  background: var(--escuro-card); color: #fff; border: 1px solid #3a4050;
+  font-size: 1.6rem; line-height: 1; font-weight: 600;
+}
+.regua-mais-menos:hover { border-color: #19b38d; color: #19b38d; }
+.regua-trilho {
+  position: relative; overflow-x: scroll; overflow-y: hidden; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch; cursor: grab; touch-action: pan-x;
+  border-radius: 14px; background: var(--escuro-card);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+}
+.regua-trilho::-webkit-scrollbar { display: none; }
+.regua-trilho.arrastando { cursor: grabbing; }
+.regua-trilho:focus-visible { outline: 2px solid #19b38d; }
+.regua-faixa { display: flex; align-items: flex-start; width: max-content; padding: 14px calc(50% - 7px) 10px; }
+.regua-marca { position: relative; flex: 0 0 14px; height: 62px; display: flex; justify-content: center; }
+.regua-marca::before { content: ""; width: 2px; height: 16px; border-radius: 2px; background: #4a5162; }
+.regua-marca.media::before { height: 24px; background: #6a7183; }
+.regua-marca.grande::before { height: 34px; background: #a3a9b8; }
+.regua-marca b { position: absolute; top: 40px; font-size: .85rem; font-weight: 600; color: var(--texto-suave); }
+.regua-dica { text-align: center; font-size: .85rem; color: #7c8394; }
+/* O ponteiro fica na moldura (parada); só a faixa de marcas rola por baixo dele. */
+.regua-moldura { position: relative; }
+.regua-ponteiro {
+  position: absolute; left: 50%; top: 4px; width: 4px; height: 44px; transform: translateX(-50%);
+  border-radius: 4px; background: #19b38d; box-shadow: 0 0 10px rgba(25,179,141,.6); pointer-events: none;
+}
+.regua-ponteiro::after {
+  content: ""; position: absolute; left: 50%; top: -6px; transform: translateX(-50%);
+  border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 9px solid #19b38d;
+}
+
+.imc {
+  align-self: center; padding: 6px 14px; border-radius: 99px; font-size: .92rem; font-weight: 600;
+  background: rgba(255,255,255,.06); color: var(--texto-suave);
+}
+.imc strong { color: #fff; }
+.imc.ok      { background: rgba(14,122,98,.22);  color: #8fe0c6; }
+.imc.baixo   { background: rgba(120,160,255,.15); color: #b5c8ff; }
+.imc.atencao { background: rgba(242,179,33,.15); color: #f5d38a; }
+.imc.alto    { background: rgba(229,100,90,.15); color: #ffb3ad; }
+
+/* ---------- Barra simples (idade) ---------- */
+.barra { display: flex; flex-direction: column; gap: 14px; padding: 22px 4px 8px; }
+.barra-valor { text-align: center; font-size: 3.4rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.barra-valor small { font-size: 1.2rem; font-weight: 600; color: var(--texto-suave); margin-left: 6px; }
+.barra-input {
+  --cheio: 0%;
+  -webkit-appearance: none; appearance: none; width: 100%; height: 10px; border-radius: 99px; margin: 14px 0 0;
+  background: linear-gradient(90deg, #19b38d var(--cheio), #343a48 var(--cheio)); cursor: pointer;
+}
+.barra-input:focus-visible { outline: 2px solid #19b38d; outline-offset: 6px; }
+.barra-input::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 30px; height: 30px; border-radius: 50%;
+  background: #fff; border: 5px solid #19b38d; box-shadow: 0 2px 8px rgba(0,0,0,.5);
+}
+.barra-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 5px solid #19b38d; }
+.barra-limites { display: flex; justify-content: space-between; font-size: .85rem; color: #7c8394; }
+
+/* ---------- Relógio de 24 horas ---------- */
+.relogio {
+  position: relative; width: min(300px, 82vw); aspect-ratio: 1; margin: 6px auto 0;
+  touch-action: none; cursor: pointer; user-select: none; -webkit-user-select: none;
+  border-radius: 50%;
+}
+.relogio:focus-visible { outline: 2px solid #19b38d; outline-offset: 4px; }
+/* Anel colorido como o céu: noite azul, nascer laranja, dia amarelo, pôr do sol, noite. */
+.relogio-anel {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(
+    #1d2552 0deg, #26306a 60deg, #e0844a 90deg, #f2b321 120deg, #ffd96b 180deg,
+    #f2b321 245deg, #e0844a 275deg, #26306a 300deg, #1d2552 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 34px), #000 calc(100% - 33px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 34px), #000 calc(100% - 33px));
+}
+.relogio::before { /* miolo escuro */
+  content: ""; position: absolute; inset: 34px; border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, #2a2f3c, var(--escuro-card) 70%);
+  box-shadow: inset 0 2px 12px rgba(0,0,0,.4);
+}
+.relogio svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.relogio-traco { stroke: #4a5162; stroke-width: 1.5; stroke-linecap: round; }
+.relogio-traco.forte { stroke: #a3a9b8; stroke-width: 2.5; }
+.relogio-num { fill: var(--texto-suave); font-size: 12px; font-weight: 700; text-anchor: middle; dominant-baseline: central; font-family: inherit; }
+.relogio-ponteiro { stroke: #19b38d; stroke-width: 4; stroke-linecap: round; opacity: .8; }
+.relogio-botao { fill: #fff; stroke: #19b38d; stroke-width: 5; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); transition: r .15s; }
+.relogio.rodando .relogio-botao { r: 18; }
+.relogio-centro {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  pointer-events: none; gap: 2px;
+}
+.relogio-icone { font-size: 1.7rem; line-height: 1; }
+.relogio-hora { font-size: 2.6rem; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.relogio-periodo { font-size: .85rem; font-weight: 600; color: var(--texto-suave); text-transform: uppercase; letter-spacing: .08em; }
+.relogio-ajuste { display: flex; align-items: center; justify-content: center; gap: 14px; color: #7c8394; font-size: .85rem; }
+.quiz-pular {
+  width: 100%; padding: 14px 18px; border-radius: 12px; cursor: pointer;
+  background: transparent; color: var(--texto-claro); border: 2px dashed #3a4050;
+  font: inherit; font-weight: 600;
+}
+.quiz-pular:hover, .quiz-pular.marcada { border-color: #19b38d; border-style: solid; background: rgba(14,122,98,.15); }
+
+/* ---------- Etapa 11 ---------- */
+.quiz-imagem { width: 100%; max-width: 340px; margin: 0 auto; border-radius: 16px; }
+
+/* ---------- Etapa 12: processando + vídeo + oferta ---------- */
+.gerando { display: flex; align-items: center; justify-content: center; gap: 10px; color: #8fe0c6; font-weight: 600; animation: piscar 1.8s ease-in-out infinite; }
+.gerando-ponto { width: 10px; height: 10px; border-radius: 50%; background: #19b38d; box-shadow: 0 0 0 0 rgba(25,179,141,.6); animation: pulso-ponto 1.8s ease-out infinite; }
+@keyframes piscar { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes pulso-ponto { 0% { box-shadow: 0 0 0 0 rgba(25,179,141,.6); } 100% { box-shadow: 0 0 0 12px rgba(25,179,141,0); } }
+.chamada-video { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.chamada-video h2 { margin: 0; font-size: clamp(1.25rem, 5.2vw, 1.6rem); line-height: 1.35; font-weight: 800; }
+.chamada-video mark {
+  background: #12a07f; color: #fff; padding: 2px 8px; border-radius: 6px;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+.video { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 14px; overflow: hidden; }
+.esconder { display: none; }
+.oferta-botoes { display: flex; flex-direction: column; align-items: center; gap: 22px; margin-top: 8px; }
+.btn-oferta {
+  width: 100%; padding: 20px 18px; border: 0; border-radius: 14px; cursor: pointer;
+  background: linear-gradient(180deg, #1fc196, #12a07f); color: #fff;
+  font: inherit; font-size: 1.2rem; font-weight: 800; line-height: 1.2;
+  box-shadow: 0 6px 22px rgba(18,160,127,.4);
+  animation: pulsar 1.8s ease-in-out infinite;
+}
+.btn-oferta:hover { filter: brightness(1.07); }
+@keyframes pulsar { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+.btn-recusa {
+  width: 92%; padding: 15px 16px; border: 0; border-radius: 12px; cursor: pointer;
+  background: #c0392b; color: #fff; font: inherit; font-size: 1.02rem; font-weight: 700;
+}
+.btn-recusa:hover { background: #a93226; }
+
+.garantia { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; margin-top: 18px; padding: 24px 18px; border-radius: 16px; background: var(--escuro-card); }
+.garantia img { width: 120px; height: auto; }
+.garantia h3 { font-size: 1.35rem; margin: 0; }
+.garantia p { color: var(--texto-suave); }
+.garantia strong { color: var(--texto-claro); }
+
+/* ---------- Downsell ---------- */
+.alerta-downsell {
+  margin: 14px -16px 0; padding: 12px 16px; text-align: center;
+  background: #b52a2a; color: #fff; font-weight: 800; font-size: 1.05rem;
+}
+@media (min-width: 592px) { .alerta-downsell { margin: 14px 0 0; border-radius: 12px; } }
+.quiz-downsell mark { background: #c0392b; color: #fff; padding: 0 6px; border-radius: 4px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.entregaveis { display: flex; flex-direction: column; gap: 12px; }
+.entregavel { padding: 18px; border-radius: 14px; background: var(--escuro-card); border: 1px solid #2f3543; text-align: center; }
+.entregavel-icone { font-size: 1.8rem; }
+.entregavel h3 { margin: 6px 0 4px; font-size: 1.1rem; color: var(--amarelo); }
+.entregavel p { color: var(--texto-suave); font-size: .95rem; }
+.preco { border-radius: 14px; overflow: hidden; border: 1px solid #2f3543; }
+.preco-faixa { background: #b52a2a; color: #fff; text-align: center; font-weight: 800; font-size: .9rem; padding: 7px 10px; }
+.preco-corpo { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; background: var(--escuro-card); }
+.preco-produto { font-size: 1.2rem; line-height: 1.2; }
+.preco-valor { flex: none; text-align: right; padding: 8px 12px; border-radius: 10px; background: rgba(14,122,98,.22); color: var(--texto-suave); font-size: .8rem; }
+.preco-valor s { color: #8a91a3; }
+.preco-valor strong { display: block; font-size: 1.45rem; color: #8fe0c6; }
+.selos { list-style: none; margin: 0; padding: 0; display: flex; justify-content: space-between; gap: 8px; }
+.selos li { display: flex; align-items: center; gap: 6px; font-size: .78rem; color: var(--texto-suave); line-height: 1.15; }
+.selos svg { width: 26px; height: 26px; flex: none; color: #8fe0c6; }
+.selos b { color: var(--texto-claro); }
