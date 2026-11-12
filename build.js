@@ -10,3 +10,57 @@ const css = fs.readFileSync(path.join(__dirname, "motor/estilo.css"), "utf8").re
 const motor = fs.readFileSync(path.join(__dirname, "motor/motor.js"), "utf8");
 fs.writeFileSync(path.join(dist, "motor.js"), "window.SJ_CSS = " + JSON.stringify(css) + ";\n" + motor);
 console.log("Funil \"" + funil + "\" montado em dist/");
+
+/* Mapa do painel (/painel): a lista de passos de cada etapa do funil, com o título e o arquivo/linha onde editar.
+   É gerado a cada publicação, então o botão "Editar" sempre aponta para a linha certa. */
+if (fs.existsSync(path.join(__dirname, funil, "painel"))) {
+  const REPO = "https://github.com/nutrifacil-admin/funil-secajejumfit/blob/main/";
+  const ler = (f) => fs.readFileSync(path.join(__dirname, f), "utf8");
+  const linha = (f, busca) => { const l = ler(f).split("\n"); const i = l.findIndex((x) => x.indexOf(busca) >= 0); return i < 0 ? 1 : i + 1; };
+  const link = (f, busca) => REPO + f + "#L" + linha(f, busca);
+  const semTag = (h) => String(h || "").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+
+  // Front: as etapas na ordem do telas.js
+  const ctx = { window: {} };
+  new Function("window", ler(funil + "/telas.js"))(ctx.window);
+  const front = ctx.window.SJ_ETAPAS.map((e, i) => {
+    const blocos = ctx.window.SJ_TELAS[e.id] || [];
+    const txt = blocos.find((b) => b.tipo === "texto");
+    return { id: e.id, n: i + 1, nome: e.nome, titulo: semTag(txt && txt.html).slice(0, 120), editar: link(funil + "/telas.js", '"' + e.id + '": [') };
+  });
+  front.push({ id: "vsl-pitch", n: "", nome: "VSL: chegou no pitch (com som)", titulo: "Evento do player no segundo do pitch", editar: link(funil + "/config.js", "vsl:"), evento: true });
+  front.push({ id: "vsl-cta", n: "", nome: "VSL: botão de compra apareceu", titulo: "Evento do player no segundo do CTA", editar: link(funil + "/config.js", "vsl:"), evento: true });
+  front.push({ id: "checkout", n: "", nome: "Clicou em comprar (checkout)", titulo: "Saiu para o checkout da Cakto", editar: link(funil + "/config.js", "checkout:"), evento: true });
+
+  // Pós-venda: obrigado → login → avaliação → oferta → downsell → área
+  const Q = funil + "/membros/js/quiz.js";
+  const pq = (id) => link(Q, "id: '" + id + "'");
+  const pos = [
+    { id: "obrigado", nome: "Página de obrigado", titulo: "Seu plano de jejum personalizado está quase pronto", editar: link(funil + "/obrigado.html", "<h1>") },
+    { id: "entrar", nome: "Tela de login", titulo: "Acesso à área de membros", editar: link(funil + "/membros/entrar.html", "<h1>") },
+    { id: "login-ok", nome: "Entrou com o e-mail", titulo: "Login aceito", editar: link(funil + "/membros/js/entrada.js", "ESTADOS"), evento: true },
+    { id: "boas-vindas", nome: "Boas-vindas", titulo: "Seja bem-vindo(a)!! Faça sua avaliação física", editar: link(Q, "function telaBoasVindas") },
+    { id: "apresentacao", nome: "Apresentação", titulo: "Avaliação Física Seca Jejum", editar: link(Q, "function telaApresentacao") },
+    ["genero", "Gênero"], ["idade", "Idade"], ["altura", "Altura"], ["peso", "Peso"], ["saude", "Saúde"], ["acorda", "Que horas acorda"],
+    ["dorme", "Que horas dorme"], ["cafe", "Café da manhã"], ["almoco", "Almoço"], ["lanche", "Lanche"], ["janta", "Janta"],
+    ["restricoes", "Restrição alimentar"], ["fome", "Horário de mais fome"], ["acelerar", "Acelerar 10x"],
+    { id: "oferta", nome: "Oferta: vídeo do upsell", titulo: "Processando a sua avaliação física… Assista a primeira aula", editar: link(Q, "function telaOferta") },
+    { id: "oferta-pitch", nome: "Vídeo: chegou no pitch (com som)", titulo: "Evento do player no segundo do pitch", editar: link(funil + "/membros/js/config.js", "pitch:"), evento: true },
+    { id: "oferta-cta", nome: "Vídeo: botões apareceram", titulo: "Botões da oferta liberados", editar: link(funil + "/membros/js/config.js", "atrasoOfertaSegundos"), evento: true },
+    { id: "oferta-quero", nome: "Clicou: quero o upsell", titulo: "QUERO EMAGRECER 10X MAIS RÁPIDO", editar: link(Q, "QUERO EMAGRECER"), evento: true },
+    { id: "downsell", nome: "Downsell (50% OFF)", titulo: "Eu acabei de liberar 50% de DESCONTO pra você", editar: link(Q, "function telaDownsell") },
+    { id: "downsell-quero", nome: "Clicou: quero o downsell", titulo: "QUERO DESBLOQUEAR TUDO COM 50% OFF", editar: link(Q, "QUERO DESBLOQUEAR"), evento: true },
+    { id: "downsell-nao", nome: "Recusou o downsell", titulo: "Não quero essa última oportunidade", editar: link(Q, "Não quero essa última"), evento: true },
+    { id: "area", nome: "Entrou na área de membros", titulo: "Meus planos", editar: link(funil + "/membros/js/inicio.js", "function inicio") }
+  ].map((x, i) => {
+    if (Array.isArray(x)) {
+      const linhaQ = ler(Q).split("\n").find((l) => l.indexOf("id: '" + x[0] + "'") >= 0) || "";
+      const t = (linhaQ.match(/titulo: '([^']+)'/) || [])[1] || "";
+      x = { id: x[0], nome: x[1], titulo: t, editar: pq(x[0]) };
+    }
+    return Object.assign({ n: x.evento ? "" : i + 1 }, x);
+  });
+  let n = 0; pos.forEach((p) => { if (!p.evento) p.n = ++n; });
+  fs.writeFileSync(path.join(dist, "painel", "mapa.js"), "window.PAINEL_MAPA = " + JSON.stringify({ jejum: { nome: "Seca Jejum", front, pos } }) + ";\n");
+  console.log("Mapa do painel: " + front.length + " passos no front, " + pos.length + " no pós-venda");
+}

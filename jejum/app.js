@@ -22,7 +22,14 @@
     if (window.__SJ3) window.__SJ3();                  // motor monta a tela nova
     if (empilhar) history.pushState({ etapa: i }, "", location.pathname + location.search);
     if (window.fbq) window.fbq("trackCustom", "EtapaQuiz", { etapa: i + 1, nome: e.nome });
+    rastro(e.id);
   }
+  // Painel de retenção: conta cada etapa (menos quando abre direto numa etapa com ?etapa=, que é teste)
+  var teste = /[?&]etapa=/.test(location.search);
+  function rastro(passo) { if (!teste && window.SJ_RASTRO) window.SJ_RASTRO("front", passo); }
+  window.addEventListener("vsl:pitch", function () { rastro("vsl-pitch"); });
+  window.addEventListener("vsl:cta", function () { rastro("vsl-cta"); });
+  window.addEventListener("sj:checkout", function () { rastro("checkout"); });
   window.SJ_AVANCAR = function () { mostrar(atual + 1, true); };
   voltar.addEventListener("click", function () { history.back(); });
   window.addEventListener("popstate", function (ev) {

@@ -37,6 +37,7 @@
 
   // ---------- Tela inicial: os 3 cartões ----------
   function inicio() {
+    if (window.SJ_RASTRO) window.SJ_RASTRO('pos', 'area');
     let status = '';
     if (respostas) {
       const hoje = new Date(), plano = P.calcular(respostas, hoje);

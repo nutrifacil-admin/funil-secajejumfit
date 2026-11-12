@@ -1,6 +1,6 @@
 /* Webhook da Cakto: cada compra aprovada libera o produto para o e-mail; reembolso/chargeback tira.
    Configurado na Cakto como "SJF + CTS · secajejum.fit". */
-const { OFERTAS, cmd, PRE, normEmail, lerCliente, salvarCliente, config, json, corpo } = require("./_lib");
+const { OFERTAS, cmd, PRE, normEmail, lerCliente, salvarCliente, config, json, corpo, pipeline, hojeBR } = require("./_lib");
 
 const LIBERA = ["purchase_approved"];
 const TIRA = ["refund", "chargeback", "purchase_refunded", "purchase_chargeback"];
@@ -31,6 +31,21 @@ module.exports = async (req, res) => {
     await salvarCliente(email, c);
     registro.ok = true;
     registro.libera = campo;
+  }
+  // Painel: conta vendas e reembolsos do dia (cada pedido conta uma vez só, mesmo se a Cakto reenviar)
+  if (codigo && (LIBERA.includes(evento) || TIRA.includes(evento))) {
+    try {
+      const pedido = String(d.id || d.refId || "") || null;
+      const marca = pedido ? await pipeline([["SET", PRE + "an:pedido:" + evento + ":" + pedido, "1", "NX"]]) : ["OK"];
+      if (marca[0] === "OK") {
+        const tipo = OFERTAS[codigo].venda, chave = "an:jejum:vendas:" + hojeBR();
+        const valor = [d.amount, d.paidAmount, d.baseAmount, d.offer && d.offer.price].map(Number).find((v) => Number.isFinite(v) && v > 0);
+        const sufixo = LIBERA.includes(evento) ? "" : "-reembolso";
+        const cmds = [["HINCRBY", chave, tipo + sufixo, 1]];
+        if (valor) cmds.push(["HINCRBY", chave, tipo + sufixo + "-centavos", Math.round(valor * 100)]);
+        await pipeline(cmds);
+      }
+    } catch (e) { /* o painel nunca atrapalha a liberação */ }
   }
   // Últimas 50 entregas, sem dados pessoais (para conferir se o webhook está chegando)
   await cmd("LPUSH", PRE + "log", JSON.stringify(registro));

@@ -117,6 +117,12 @@
     return Promise.race([pedido, espera]);
   }
 
+  /* ---------- Painel de retenção ----------
+     Conta cada tela do 1º acesso (o "Refazer meus horários" não entra na conta). */
+  function rastro(passo) { if (MODO === 'completo' && window.SJ_RASTRO) window.SJ_RASTRO('pos', passo); }
+  window.addEventListener('vsl:pitch', function () { rastro('oferta-pitch'); });
+  window.addEventListener('vsl:cta', function () { rastro('oferta-cta'); });
+
   /* ---------- Navegação ---------- */
   function irPara(i) {
     estado.passo = Math.max(0, Math.min(TELAS.length - 1, i));
@@ -148,6 +154,7 @@
       el.etapa.textContent = n + ' de ' + TOTAL_ETAPAS;
     }
     document.body.classList.toggle('quiz-modo-downsell', t.tipo === 'downsell');
+    rastro(t.id);
     ({
       'boas-vindas': telaBoasVindas,
       'apresentacao': telaApresentacao,
@@ -567,6 +574,7 @@
   }
 
   function irCheckout(url) {
+    rastro(url === QUIZ.checkoutUpsell ? 'oferta-quero' : 'downsell-quero');
     try { if (window.fbq) fbq('track', 'InitiateCheckout'); } catch (e) {}
     concluirFunil().then(function () { location.href = url; });
   }
@@ -667,6 +675,7 @@
 
     document.getElementById('quero').addEventListener('click', function () { irCheckout(QUIZ.checkoutDownsell); });
     document.getElementById('nao-quero').addEventListener('click', function () {
+      rastro('downsell-nao');
       concluirFunil().then(function () { location.href = './'; });
     });
   }

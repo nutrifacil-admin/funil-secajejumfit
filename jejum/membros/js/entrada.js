@@ -86,6 +86,7 @@
       .then(function (d) {
         if (d.ok) {
           mostrar('sucesso');
+          if (window.SJ_RASTRO) window.SJ_RASTRO('pos', 'login-ok');
           setTimeout(function () { location.href = DESTINOS[d.destino] || './'; }, 900);
           return;
         }

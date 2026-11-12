@@ -3,9 +3,9 @@ const crypto = require("crypto");
 
 // Ofertas da Cakto (código do link de checkout) → o que cada uma libera
 const OFERTAS = {
-  fk5jcvn: { libera: "front", nome: "Seca Jejum (front)" },
-  "35ocedw": { libera: "cha", nome: "Chá Turbo Seca (upsell R$47)" },
-  muqb3ft: { libera: "cha", nome: "Chá Turbo Seca (downsell R$23)" }
+  fk5jcvn: { libera: "front", venda: "front", nome: "Seca Jejum (front)" },
+  "35ocedw": { libera: "cha", venda: "upsell", nome: "Chá Turbo Seca (upsell R$47)" },
+  muqb3ft: { libera: "cha", venda: "downsell", nome: "Chá Turbo Seca (downsell R$23)" }
 };
 const PASTA_PDF = "/e-368c4e0875/";           // pasta dos PDFs no site (só chega lá quem passa pelo login)
 const PDFS = {
@@ -42,6 +42,27 @@ async function cmd(...args) {
   const j = await r.json();
   if (j.error) throw new Error(j.error);
   return j.result;
+}
+// Vários comandos numa ida só (pipeline do Upstash). Sem banco: executa um a um na memória.
+async function pipeline(lista) {
+  if (!lista.length) return [];
+  if (!URL_DB) {
+    const out = [];
+    for (const [c, k, f, v] of lista) {
+      if (c === "HINCRBY") { const h = memoria.get(k) || {}; h[f] = (Number(h[f]) || 0) + Number(v); memoria.set(k, h); out.push(h[f]); }
+      else if (c === "HGETALL") { const h = memoria.get(k) || {}; out.push(Object.entries(h).flat().map(String)); }
+      else if (c === "SET") { if (v === "NX" && memoria.has(k)) out.push(null); else { memoria.set(k, f); out.push("OK"); } }
+      else out.push(await cmd(c, k, f, v));
+    }
+    return out;
+  }
+  const r = await fetch(URL_DB.replace(/\/$/, "") + "/pipeline", { method: "POST", headers: { Authorization: "Bearer " + TOKEN_DB, "Content-Type": "application/json" }, body: JSON.stringify(lista) });
+  const j = await r.json();
+  return j.map((x) => (x.error ? null : x.result));
+}
+// Data de hoje no horário de Brasília (AAAA-MM-DD)
+function hojeBR(d) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(d || new Date());
 }
 const PRE = "sjf:";
 const normEmail = (e) => String(e || "").trim().toLowerCase();
@@ -97,4 +118,4 @@ async function corpo(req) {
   });
 }
 
-module.exports = { OFERTAS, PDFS, PASTA_PDF, cmd, PRE, normEmail, lerCliente, salvarCliente, config, criarSessao, sairSessao, emailDaSessao, json, corpo };
+module.exports = { segredo, pipeline, hojeBR, OFERTAS, PDFS, PASTA_PDF, cmd, PRE, normEmail, lerCliente, salvarCliente, config, criarSessao, sairSessao, emailDaSessao, json, corpo };

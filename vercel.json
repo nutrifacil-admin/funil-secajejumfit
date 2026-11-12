@@ -27,7 +27,7 @@
       ]
     },
     {
-      "source": "/(membros|obrigado)(.*)",
+      "source": "/(membros|obrigado|painel)(.*)",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
       ]

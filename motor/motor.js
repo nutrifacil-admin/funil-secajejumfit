@@ -87,6 +87,7 @@
   function irCheckout() {
     var url = (window.SJ_CFG || {}).checkout || "";
     if (!url) { console.warn("[SJ] Defina o checkout no SJ_CFG."); return; }
+    try { TOP.dispatchEvent(new CustomEvent("sj:checkout")); } catch (e) {}
     var q = TOP.location.search.replace(/^\?/, "");
     TOP.location.href = url + (q ? (url.indexOf("?") >= 0 ? "&" : "?") + q : "");
   }

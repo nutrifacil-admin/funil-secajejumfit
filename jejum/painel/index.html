@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Central de Retenção</title>
+  <meta name="theme-color" content="#05070d">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/painel/painel.css?v=1">
+</head>
+<body>
+  <!-- Entrada: galáxia de dados -->
+  <section id="entrada" class="entrada" hidden>
+    <canvas id="galaxia" aria-hidden="true"></canvas>
+    <div class="entrada-brilho" aria-hidden="true"></div>
+    <form id="form-login" class="cartao-login" novalidate>
+      <div class="selo-sistema"><span class="pulso"></span>SISTEMA ONLINE · v1</div>
+      <div class="marca-login">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="none" stroke="url(#gl)" stroke-width="1.5"/><circle cx="20" cy="20" r="11" fill="none" stroke="url(#gl)" stroke-width="1.5" opacity=".6"/><circle cx="20" cy="20" r="3.4" fill="#7dd3fc"/><defs><linearGradient id="gl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7dd3fc"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs></svg>
+        <div><strong>Central de Retenção</strong><span>Funis · dados em tempo real</span></div>
+      </div>
+      <label>E-mail<input id="l-email" type="email" autocomplete="username" placeholder="voce@email.com" required></label>
+      <label>Senha<input id="l-senha" type="password" autocomplete="current-password" placeholder="••••••••" required></label>
+      <p id="l-erro" class="erro" role="alert" hidden></p>
+      <button id="l-botao" type="submit"><span>Entrar no painel</span></button>
+      <p class="rodape-login">Acesso restrito à equipe · conexão criptografada</p>
+    </form>
+  </section>
+
+  <!-- Painel -->
+  <div id="painel" class="painel" hidden>
+    <header class="topo">
+      <div class="marca"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="20" cy="20" r="4" fill="currentColor"/></svg>Central de Retenção</div>
+      <label class="seletor-funil"><span>Funil</span><select id="f-funil"></select></label>
+      <div class="usuario">
+        <button id="u-botao" type="button" aria-haspopup="true" aria-expanded="false"><span id="u-avatar" class="avatar"></span><span><small>Olá,</small><strong id="u-nome"></strong></span></button>
+        <div id="u-menu" class="menu" hidden>
+          <button type="button" id="u-senha">Trocar minha senha</button>
+          <button type="button" id="u-sair">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="filtros">
+      <div class="abas" role="tablist">
+        <button type="button" role="tab" data-g="front" aria-selected="true">Front · quiz e VSL</button>
+        <button type="button" role="tab" data-g="pos" aria-selected="false">Pós-venda · área e upsell</button>
+      </div>
+      <div class="periodo" role="group" aria-label="Período">
+        <button type="button" data-p="hoje" class="ativo">Hoje</button>
+        <button type="button" data-p="ontem">Ontem</button>
+        <button type="button" data-p="7">7 dias</button>
+        <button type="button" data-p="30">30 dias</button>
+        <button type="button" data-p="mes">Este mês</button>
+        <span class="datas"><input type="date" id="f-de" aria-label="De"><span>→</span><input type="date" id="f-ate" aria-label="Até"></span>
+      </div>
+      <label class="seletor-camp"><span>Campanha</span><select id="f-camp"><option value="">Todas</option></select></label>
+      <button type="button" id="f-atualizar" class="atualizar" title="Atualizar agora"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4.5h-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="f-hora">—</span></button>
+    </div>
+
+    <section id="kpis" class="kpis" aria-label="Resumo"></section>
+
+    <section class="bloco">
+      <div class="bloco-topo">
+        <h2 id="t-titulo">Retenção por tela</h2>
+        <p class="legenda"><span class="ponto-queda"></span>maiores quedas · retenção = quantos dos que entraram na 1ª tela chegaram até ali</p>
+      </div>
+      <div class="tabela" role="table" aria-label="Retenção por tela">
+        <div class="linha cab" role="row"><span>#</span><span>Tela</span><span>Retenção</span><span class="num">Visualizações</span><span class="num">%</span><span class="num">Queda</span><span></span></div>
+        <div id="linhas"></div>
+      </div>
+    </section>
+
+    <section class="bloco" id="bloco-dia">
+      <div class="bloco-topo"><h2>Por dia</h2><p class="legenda" id="dia-legenda"></p></div>
+      <div id="grafico" class="grafico"></div>
+    </section>
+
+    <p class="nota">Vendas e receita vêm da Cakto e mostram todas as campanhas. Os contadores começaram a valer quando o painel entrou no ar.</p>
+  </div>
+
+  <div id="tooltip" class="tooltip" hidden></div>
+
+  <dialog id="d-senha" class="dialogo">
+    <form id="form-senha" method="dialog">
+      <h3>Trocar minha senha</h3>
+      <label>Senha atual<input id="s-atual" type="password" autocomplete="current-password" required></label>
+      <label>Nova senha (mín. 8 caracteres)<input id="s-nova" type="password" autocomplete="new-password" minlength="8" required></label>
+      <p id="s-msg" class="erro" hidden></p>
+      <div class="acoes"><button type="button" id="s-cancelar" class="sec">Cancelar</button><button type="submit">Salvar</button></div>
+    </form>
+  </dialog>
+
+  <script src="/painel/mapa.js?v=1"></script>
+  <script src="/painel/painel.js?v=1"></script>
+</body>
+</html>
