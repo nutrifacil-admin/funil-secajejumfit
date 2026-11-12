@@ -129,8 +129,10 @@
       var vel = 4 + Math.pow(t, 2.2) * 120;
       ctx.fillStyle = "rgba(5,7,13," + (0.32 - t * 0.18) + ")"; ctx.fillRect(0, 0, W, H);
       // brilho no ponto de fuga
+      // no fim o brilho apaga: a nave entra num buraco negro
+      var bn = t < 0.7 ? 0 : (t - 0.7) / 0.3, bnE = bn * bn * (3 - 2 * bn);
       var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, F * (0.25 + t * 0.6));
-      g.addColorStop(0, "rgba(160,200,255," + (0.08 + t * 0.35) + ")"); g.addColorStop(1, "rgba(0,0,0,0)");
+      g.addColorStop(0, "rgba(160,200,255," + (0.08 + Math.min(t, 0.7) * 0.3) * (1 - bnE) + ")"); g.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
       ctx.lineCap = "round";
       for (var i = 0; i < estrelas.length; i++) {
@@ -158,16 +160,29 @@
         ctx.shadowBlur = 0;
       }
       ctx.globalAlpha = 1;
+      // buraco negro: um disco escuro cresce no centro, com um anel fino de luz sendo engolido na borda
+      if (bn > 0) {
+        var R = Math.pow(bnE, 1.6) * Math.hypot(W, H) * 0.62 + 4;
+        var anel = ctx.createRadialGradient(cx, cy, R * 0.92, cx, cy, R * 1.35);
+        anel.addColorStop(0, "rgba(167,139,250," + 0.55 * (1 - bnE * 0.6) + ")");
+        anel.addColorStop(0.35, "rgba(125,211,252," + 0.22 * (1 - bnE * 0.6) + ")");
+        anel.addColorStop(1, "rgba(5,7,13,0)");
+        ctx.fillStyle = anel; ctx.beginPath(); ctx.arc(cx, cy, R * 1.35, 0, 6.283); ctx.fill();
+        ctx.fillStyle = "#020306"; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.283); ctx.fill();
+        // escurece a tela inteira junto, até o breu
+        ctx.fillStyle = "rgba(2,3,6," + bnE * 0.55 + ")"; ctx.fillRect(0, 0, W, H);
+        hud.style.opacity = String(1 - bnE);
+      }
       var p = Math.min(100, Math.round(Math.pow(t, 0.8) * 100));
       pct.textContent = p + "%"; barra.style.width = p + "%";
       if (t < 1) return requestAnimationFrame(quadro);
-      // clarão de chegada e entra no painel
-      var luz = document.createElement("div"); luz.className = "clarao"; document.body.appendChild(luz);
+      // do breu do buraco negro, o painel aparece devagar
+      var breu = document.createElement("div"); breu.className = "breu"; document.body.appendChild(breu);
       setTimeout(function () {
         hud.remove(); $("form-login").classList.remove("decolando");
         fim();
-        setTimeout(function () { luz.classList.add("some"); setTimeout(function () { luz.remove(); }, 700); }, 60);
-      }, 260);
+        setTimeout(function () { breu.classList.add("some"); setTimeout(function () { breu.remove(); }, 900); }, 120);
+      }, 200);
     }
     ctx.fillStyle = "#05070d"; ctx.fillRect(0, 0, W, H);
     requestAnimationFrame(quadro);
