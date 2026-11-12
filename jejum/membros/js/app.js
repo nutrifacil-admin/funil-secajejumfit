@@ -315,6 +315,7 @@
       if (d.erro) { $('saudacao').textContent = 'Não conseguimos carregar o seu plano. Verifique a internet e recarregue a página.'; return; }
       if (!d.respostas) { location.replace('quiz.html'); return; }
       perfil = d.respostas;
+      if (window.SJ_RASTRO) window.SJ_RASTRO('pos', 'agenda');
       render();
       setInterval(() => { if ($('modal').hidden && deslocamento === 0) render(); }, 30000);
     });

@@ -51,6 +51,8 @@ async function pipeline(lista) {
     for (const [c, k, f, v] of lista) {
       if (c === "HINCRBY") { const h = memoria.get(k) || {}; h[f] = (Number(h[f]) || 0) + Number(v); memoria.set(k, h); out.push(h[f]); }
       else if (c === "HGETALL") { const h = memoria.get(k) || {}; out.push(Object.entries(h).flat().map(String)); }
+      else if (c === "PFADD") { const st = memoria.get(k) || new Set(); st.add(f); memoria.set(k, st); out.push(1); }
+      else if (c === "PFCOUNT") { const u = new Set(); lista.find((x) => x === lista[out.length]).slice(1).forEach((kk) => { const st = memoria.get(kk); if (st instanceof Set) st.forEach((v2) => u.add(v2)); }); out.push(u.size); }
       else if (c === "SET") { if (v === "NX" && memoria.has(k)) out.push(null); else { memoria.set(k, f); out.push("OK"); } }
       else out.push(await cmd(c, k, f, v));
     }

@@ -51,7 +51,11 @@ if (fs.existsSync(path.join(__dirname, funil, "painel"))) {
     { id: "downsell", nome: "Downsell (50% OFF)", titulo: "Eu acabei de liberar 50% de DESCONTO pra você", editar: link(Q, "function telaDownsell") },
     { id: "downsell-quero", nome: "Clicou: quero o downsell", titulo: "QUERO DESBLOQUEAR TUDO COM 50% OFF", editar: link(Q, "QUERO DESBLOQUEAR"), evento: true },
     { id: "downsell-nao", nome: "Recusou o downsell", titulo: "Não quero essa última oportunidade", editar: link(Q, "Não quero essa última"), evento: true },
-    { id: "area", nome: "Entrou na área de membros", titulo: "Meus planos", editar: link(funil + "/membros/js/inicio.js", "function inicio") }
+    { id: "area", nome: "Entrou na área de membros", titulo: "Meus planos", editar: link(funil + "/membros/js/inicio.js", "function inicio") },
+    { id: "agenda", nome: "Abriu a agenda de jejum", titulo: "Seu plano de hoje", editar: link(funil + "/membros/agenda.html", "Seu plano de hoje") },
+    { id: "conteudo", nome: "Abriu a lista de e-books", titulo: "Método Seca Jejum / Chá Turbo Seca", editar: link(funil + "/membros/js/inicio.js", "function conteudo") },
+    { id: "ebook", nome: "Abriu um e-book", titulo: "Leitura do e-book (páginas)", editar: link(funil + "/membros/js/modulos.js", "window.MODULOS") },
+    { id: "baixar", nome: "Baixou o PDF", titulo: "Botão Baixar o PDF", editar: link(funil + "/membros/js/inicio.js", "Baixar o PDF"), evento: true }
   ].map((x, i) => {
     if (Array.isArray(x)) {
       const linhaQ = ler(Q).split("\n").find((l) => l.indexOf("id: '" + x[0] + "'") >= 0) || "";

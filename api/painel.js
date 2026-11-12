@@ -95,7 +95,7 @@ module.exports = async (req, res) => {
 
   // Posição das telas na visão Flow (compartilhada pela equipe)
   if (acao === "layout") {
-    const f = FUNIS[q.get("f")] ? q.get("f") : "jejum", g = q.get("g") === "pos" ? "pos" : "front";
+    const f = FUNIS[q.get("f")] ? q.get("f") : "jejum", g = ["front", "pos", "ofertas", "entrega", "completo"].includes(q.get("g")) ? q.get("g") : "front";
     const chave = "sjf:painel:layout:" + f + ":" + g;
     if (req.method === "GET") { const v = await cmd("GET", chave); return json(res, 200, { ok: true, pos: v ? JSON.parse(v) : null }); }
     const b = await corpo(req), pos = {};
@@ -108,32 +108,33 @@ module.exports = async (req, res) => {
 
   if (acao === "dados") {
     const f = FUNIS[q.get("f")] ? q.get("f") : "jejum";
-    const g = q.get("g") === "pos" ? "pos" : "front";
+    const grupos = q.get("g") === "todos" ? ["front", "pos"] : [q.get("g") === "pos" ? "pos" : "front"];
     const lista = dias(q.get("de") || hojeBR(), q.get("ate") || hojeBR());
     if (!lista) return json(res, 400, { ok: false, erro: "Período inválido." });
     const camp = String(q.get("c") || "");
-    const cmds = [];
+    const cmds = [], POR = grupos.length * 2 + 2;
     lista.forEach((d) => {
-      cmds.push(["HGETALL", "an:" + f + ":" + g + ":" + d]);
-      cmds.push(["HGETALL", "an:" + f + ":" + g + ":" + d + ":camp"]);
+      grupos.forEach((g) => { cmds.push(["HGETALL", "an:" + f + ":" + g + ":" + d]); cmds.push(["HGETALL", "an:" + f + ":" + g + ":" + d + ":camp"]); });
       cmds.push(["HGETALL", "an:" + f + ":vendas:" + d]);
+      cmds.push(["PFCOUNT", "an:" + f + ":clientes:" + d]);
     });
+    cmds.push(["PFCOUNT"].concat(lista.map((d) => "an:" + f + ":clientes:" + d)));      // clientes únicos no período inteiro
     const r = await pipeline(cmds);
     const passos = {}, vendas = {}, campanhas = {}, porDia = [];
     lista.forEach((d, i) => {
-      const geral = objeto(r[i * 3]), porCamp = objeto(r[i * 3 + 1]), v = objeto(r[i * 3 + 2]);
-      let doDia = geral;
-      if (camp) {
-        doDia = {};
-        Object.entries(porCamp).forEach(([k, n]) => { const [c, p] = k.split("|"); if (c === camp) doDia[p] = (doDia[p] || 0) + n; });
-      }
-      Object.entries(porCamp).forEach(([k, n]) => { const [c] = k.split("|"); campanhas[c] = (campanhas[c] || 0) + n; });
+      const doDia = {}, base = i * POR;
+      grupos.forEach((g, gi) => {
+        const geral = objeto(r[base + gi * 2]), porCamp = objeto(r[base + gi * 2 + 1]);
+        Object.entries(porCamp).forEach(([k, n]) => { const [c, p] = k.split("|"); campanhas[c] = (campanhas[c] || 0) + n; if (camp && c === camp) doDia[p] = (doDia[p] || 0) + n; });
+        if (!camp) Object.entries(geral).forEach(([p, n]) => (doDia[p] = (doDia[p] || 0) + n));
+      });
+      const v = objeto(r[base + grupos.length * 2]), cli = Number(r[base + grupos.length * 2 + 1]) || 0;
       Object.entries(doDia).forEach(([p, n]) => (passos[p] = (passos[p] || 0) + n));
       Object.entries(v).forEach(([k, n]) => (vendas[k] = (vendas[k] || 0) + n));
-      porDia.push({ dia: d, passos: doDia, vendas: v });
+      porDia.push({ dia: d, passos: doDia, vendas: v, clientes: cli });
     });
-    return json(res, 200, { ok: true, f, g, de: lista[0], ate: lista[lista.length - 1], campanha: camp || null,
-      passos, vendas, campanhas: Object.keys(campanhas).sort((a, b) => campanhas[b] - campanhas[a]), porDia });
+    return json(res, 200, { ok: true, f, de: lista[0], ate: lista[lista.length - 1], campanha: camp || null,
+      passos, vendas, clientes: Number(r[r.length - 1]) || 0, campanhas: Object.keys(campanhas).sort((a, b) => campanhas[b] - campanhas[a]), porDia });
   }
   return json(res, 404, { ok: false });
 };

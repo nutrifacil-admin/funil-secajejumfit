@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/painel/painel.css?v=4">
+  <link rel="stylesheet" href="/painel/painel.css?v=5">
 </head>
 <body>
   <!-- Entrada: galáxia de dados -->
@@ -47,8 +47,10 @@
 
     <div class="filtros">
       <div class="abas" role="tablist">
-        <button type="button" role="tab" data-g="front" aria-selected="true">Front · quiz e VSL</button>
-        <button type="button" role="tab" data-g="pos" aria-selected="false">Pós-venda · área e upsell</button>
+        <button type="button" role="tab" data-aba="front" aria-selected="true">Front</button>
+        <button type="button" role="tab" data-aba="ofertas" aria-selected="false">Upsell e Downsell</button>
+        <button type="button" role="tab" data-aba="entrega" aria-selected="false">Entrega</button>
+        <button type="button" role="tab" data-aba="completo" aria-selected="false">Funil completo</button>
       </div>
       <div class="periodo" role="group" aria-label="Período">
         <button type="button" data-p="hoje" class="ativo">Hoje</button>
@@ -63,6 +65,7 @@
     </div>
 
     <section id="kpis" class="kpis" aria-label="Resumo"></section>
+    <section id="decisoes" class="decisoes" aria-label="Decisões no upsell e no downsell" hidden></section>
 
     <section class="bloco">
       <div class="bloco-topo">
@@ -71,7 +74,7 @@
           <button type="button" data-v="lista" class="ativo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Lista</button>
           <button type="button" data-v="flow"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="8" width="6" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="15.5" y="8" width="6" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.6"/></svg><span>Flow</span><em>novo</em></button>
         </div>
-        <p class="legenda"><span class="ponto-queda"></span>maiores quedas · retenção = quantos dos que entraram na 1ª tela chegaram até ali</p>
+        <p class="legenda"><span class="ponto-queda"></span>maiores evasões · retenção = quantos dos que entraram no 1º passo chegaram até ali</p>
       </div>
       <div id="flow" class="flow" hidden>
         <div class="flow-mundo" id="flow-mundo"><svg class="flow-ligacoes" id="flow-ligacoes"></svg><div id="flow-nos"></div></div>
@@ -115,7 +118,7 @@
     </form>
   </dialog>
 
-  <script src="/painel/mapa.js?v=2"></script>
-  <script src="/painel/painel.js?v=4"></script>
+  <script src="/painel/mapa.js?v=3"></script>
+  <script src="/painel/painel.js?v=5"></script>
 </body>
 </html>

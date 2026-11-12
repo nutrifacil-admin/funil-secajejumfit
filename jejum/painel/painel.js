@@ -177,12 +177,46 @@
   });
 
   /* ===================== Painel ===================== */
-  var S = { f: "jejum", g: "front", p: "hoje", de: "", ate: "", c: "", hoje: "", timer: null, visao: "lista", d: null, ant: null };
+  var S = { f: "jejum", v: "front", p: "hoje", de: "", ate: "", c: "", hoje: "", timer: null, visao: "lista", d: null, ant: null };
   var fmt = function (n) { return Number(n || 0).toLocaleString("pt-BR"); };
   var pct = function (a, b) { return b ? a / b * 100 : 0; };
   var pctTxt = function (v) { return (v >= 10 || v === 0 ? Math.round(v) : v.toFixed(1).replace(".", ",")) + "%"; };
   var reais = function (c) { return (c / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); };
   var ICO_EDITAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  /* ---------- As 4 visões do funil ----------
+     front: quiz + VSL · ofertas: avaliação + upsell + downsell · entrega: acesso e uso da área · completo: tudo, do anúncio ao fim.
+     As vendas da Cakto entram como passos ("venda") no lugar certo do caminho. */
+  var VENDAS = {
+    "venda-front": { id: "venda-front", venda: "front", nome: "Compra aprovada · front", titulo: "Pagamento aprovado na Cakto (Plano de Jejum)" },
+    "venda-upsell": { id: "venda-upsell", venda: "upsell", nome: "Compra aprovada · upsell", titulo: "Pagamento aprovado na Cakto (Chá Turbo R$47)" },
+    "venda-downsell": { id: "venda-downsell", venda: "downsell", nome: "Compra aprovada · downsell", titulo: "Pagamento aprovado na Cakto (Chá Turbo R$23)" }
+  };
+  var VISOES = {
+    front: { nome: "Front", titulo: "Retenção por tela · Front" },
+    ofertas: { nome: "Upsell e Downsell", titulo: "Retenção por tela · Upsell e Downsell" },
+    entrega: { nome: "Entrega", titulo: "Entrega · acesso e uso da área de membros" },
+    completo: { nome: "Funil completo", titulo: "Funil completo · do anúncio à área de membros" }
+  };
+  var OFERTAS_IDS = ["boas-vindas", "apresentacao", "genero", "idade", "altura", "peso", "saude", "acorda", "dorme", "cafe", "almoco", "lanche", "janta", "restricoes", "fome", "acelerar", "oferta", "oferta-pitch", "oferta-cta", "oferta-quero", "venda-upsell", "downsell", "downsell-quero", "venda-downsell", "downsell-nao"];
+  var ENTREGA_IDS = ["venda-front", "obrigado", "entrar", "login-ok", "area", "agenda", "conteudo", "ebook", "baixar"];
+  function passosDaVisao(v) {
+    var M = MAPA[S.f] || { front: [], pos: [] }, porId = {};
+    M.front.concat(M.pos).forEach(function (p) { porId[p.id] = p; });
+    Object.keys(VENDAS).forEach(function (k) { porId[k] = VENDAS[k]; });
+    var ids;
+    if (v === "front") ids = M.front.map(function (p) { return p.id; });
+    else if (v === "ofertas") ids = OFERTAS_IDS;
+    else if (v === "entrega") ids = ENTREGA_IDS;
+    else ids = M.front.map(function (p) { return p.id; }).concat(["venda-front", "obrigado", "entrar", "login-ok"], OFERTAS_IDS, ["area", "agenda", "conteudo", "ebook", "baixar"]);
+    var n = 0;
+    return ids.filter(function (id) { return porId[id]; }).map(function (id) {
+      var p = Object.assign({}, porId[id]);
+      if (!p.evento && !p.venda) p.n = ++n; else p.n = "";
+      return p;
+    });
+  }
+  function valor(p, d) { return p.venda ? (d.vendas[p.venda] || 0) : (d.passos[p.id] || 0); }
 
   function somaDias(iso, n) { var d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
   function periodo() {
@@ -194,7 +228,6 @@
     if (S.p === "mes") return [h.slice(0, 8) + "01", h];
     return [S.de || h, S.ate || h];
   }
-
   // Período anterior do mesmo tamanho (hoje → ontem; 7 dias → os 7 antes) para o comparativo
   function anterior() {
     var p = periodo(), n = Math.round((new Date(p[1] + "T12:00:00Z") - new Date(p[0] + "T12:00:00Z")) / 864e5) + 1;
@@ -209,23 +242,22 @@
       S.hoje = eu.hoje;
       $("u-nome").textContent = eu.nome; $("u-avatar").textContent = (eu.nome || "?").charAt(0);
       $("f-funil").innerHTML = Object.keys(eu.funis).map(function (k) { return '<option value="' + k + '">' + esc(eu.funis[k]) + "</option>"; }).join("");
-      try { var g = sessionStorage.getItem("painel_g"); if (g) S.g = g; var p = sessionStorage.getItem("painel_p"); if (p) S.p = p; } catch (e) {}
+      try { var v = sessionStorage.getItem("painel_v"); if (VISOES[v]) S.v = v; var p = sessionStorage.getItem("painel_p"); if (p) S.p = p; } catch (e) {}
       marcarFiltros();
       carregar();
     });
   }
 
   function marcarFiltros() {
-    document.querySelectorAll(".abas button").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.g === S.g ? "true" : "false"); });
+    document.querySelectorAll(".abas button").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.aba === S.v ? "true" : "false"); });
     document.querySelectorAll(".periodo > button").forEach(function (b) { b.classList.toggle("ativo", b.dataset.p === S.p); });
     var p = periodo(); $("f-de").value = p[0]; $("f-ate").value = p[1]; $("f-de").max = $("f-ate").max = S.hoje;
   }
 
   function carregar() {
-    var p = periodo(), bt = $("f-atualizar");
+    var p = periodo(), bt = $("f-atualizar"), a = anterior();
     bt.classList.add("girando");
-    var a = anterior();
-    Promise.all([api("dados", { f: S.f, g: S.g, de: p[0], ate: p[1], c: S.c }), api("dados", { f: S.f, g: S.g, de: a[0], ate: a[1], c: S.c })]).then(function (r) {
+    Promise.all([api("dados", { f: S.f, g: "todos", de: p[0], ate: p[1], c: S.c }), api("dados", { f: S.f, g: "todos", de: a[0], ate: a[1], c: S.c })]).then(function (r) {
       var d = r[0]; S.ant = r[1] && r[1].ok ? r[1] : null;
       bt.classList.remove("girando");
       if (d._status === 401) return telaEntrada();
@@ -241,23 +273,24 @@
     clearInterval(S.timer);
     if (S.p === "hoje") S.timer = setInterval(carregar, 60000);   // hoje: atualiza sozinho a cada minuto
   }
+  function trocarVisao() { marcarFiltros(); if (S.d) { desenhar(S.d); if (S.visao === "flow") flow.desenhar(); } }
 
-  function baseDe(passos, v) {
-    for (var i = 0; i < passos.length; i++) if (!passos[i].evento && v[passos[i].id]) return v[passos[i].id];
+  function baseDe(passos, d) {
+    for (var i = 0; i < passos.length; i++) if (!passos[i].evento && valor(passos[i], d)) return valor(passos[i], d);
     return 0;
   }
-  // Linhas: retenção sobre a 1ª tela; queda sobre a linha anterior; comparativo com o período anterior (em pontos de %)
+  // Linhas: retenção sobre o 1º passo; evasão sobre o passo anterior; comparativo com o período anterior (em pontos de %)
   function calcular(d) {
-    var passos = (MAPA[S.f] || {})[S.g] || [], v = d.passos, base = baseDe(passos, v);
-    var va = S.ant ? S.ant.passos : null, baseA = va ? baseDe(passos, va) : 0;
+    var passos = passosDaVisao(S.v), base = baseDe(passos, d);
+    var A = S.ant, baseA = A ? baseDe(passos, A) : 0;
     var linhas = [], anterior = null;
     passos.forEach(function (p) {
-      var n = v[p.id] || 0, queda = anterior != null && anterior > 0 ? 1 - n / anterior : null;
-      var ret = pct(n, base), retA = baseA ? pct(va[p.id] || 0, baseA) : null;
+      var n = valor(p, d), queda = anterior != null && anterior > 0 ? 1 - n / anterior : null;
+      var ret = pct(n, base), retA = baseA ? pct(valor(p, A), baseA) : null;
       linhas.push({ p: p, n: n, ret: ret, queda: queda, dif: base && retA != null ? ret - retA : null });
       anterior = n;
     });
-    var maiores = linhas.filter(function (l) { return l.queda != null && l.queda > 0.05 && !l.p.evento; })
+    var maiores = linhas.filter(function (l) { return l.queda != null && l.queda > 0.05 && !l.p.evento && !l.p.venda; })
       .sort(function (a, b) { return b.queda - a.queda; }).slice(0, 3).map(function (l) { return l.p.id; });
     return { passos: passos, base: base, linhas: linhas, maiores: maiores };
   }
@@ -266,59 +299,104 @@
     var v = Math.abs(l.dif) < 0.05 ? 0 : l.dif;
     return { txt: (v > 0 ? "+" : v < 0 ? "−" : "±") + pctTxt(Math.abs(v)) + " " + rotuloAnterior(), cls: v > 0 ? "sobe" : v < 0 ? "desce" : "" };
   }
+  function etiqueta(p) { return p.venda ? '<span class="etiqueta venda">venda · Cakto</span>' : p.evento ? '<span class="etiqueta">evento</span>' : ""; }
 
   function desenhar(d) {
     var c = calcular(d), passos = c.passos, base = c.base, linhas = c.linhas, maiores = c.maiores, v = d.passos, vd = d.vendas;
 
-    $("t-titulo").textContent = S.g === "front" ? "Retenção por tela · Front" : "Retenção por tela · Pós-venda";
+    $("t-titulo").textContent = VISOES[S.v].titulo;
     $("linhas").innerHTML = base ? linhas.map(function (l) {
       var alta = maiores.indexOf(l.p.id) >= 0;
-      return '<div class="linha' + (l.p.evento ? " evento" : "") + '" role="row">' +
+      return '<div class="linha' + (l.p.evento ? " evento" : "") + (l.p.venda ? " venda" : "") + '" role="row">' +
         '<span class="n">' + esc(l.p.n) + "</span>" +
-        '<span class="tela-nome"><strong>' + esc(l.p.nome) + (l.p.evento ? '<span class="etiqueta">evento</span>' : "") + "</strong><small>" + esc(l.p.titulo) + "</small></span>" +
-        '<span class="trilho" data-dica="' + esc(l.p.nome) + "|" + fmt(l.n) + " visualizações · " + pctTxt(l.ret) + ' da 1ª tela"><i style="width:' + Math.min(100, l.ret).toFixed(1) + '%"></i></span>' +
+        '<span class="tela-nome"><strong>' + esc(l.p.nome) + etiqueta(l.p) + "</strong><small>" + esc(l.p.titulo) + "</small></span>" +
+        '<span class="trilho" data-dica="' + esc(l.p.nome) + "|" + fmt(l.n) + (l.p.venda ? " vendas" : " visualizações") + " · " + pctTxt(l.ret) + ' do 1º passo"><i style="width:' + Math.min(100, l.ret).toFixed(1) + '%"></i></span>' +
         '<span class="num vis">' + fmt(l.n) + "</span>" +
         '<span class="num pct">' + pctTxt(l.ret) + (l === linhas[0] || l.dif == null ? "" : '<span class="delta ' + difTxt(l).cls + '">' + esc(difTxt(l).txt.replace(/ vs .*/, "")) + "</span>") + "</span>" +
         '<span class="num queda' + (alta ? " alta" : "") + '">' + (l.queda == null ? "—" : (alta ? "<b>▼ " + pctTxt(l.queda * 100) + "</b>" : (l.queda > 0 ? "−" + pctTxt(l.queda * 100) : "+" + pctTxt(-l.queda * 100)))) + "</span>" +
-        '<a class="editar" href="' + esc(l.p.editar) + '" target="_blank" rel="noopener">' + ICO_EDITAR + "Editar</a>" +
+        (l.p.editar ? '<a class="editar" href="' + esc(l.p.editar) + '" target="_blank" rel="noopener">' + ICO_EDITAR + "Editar</a>" : "<span></span>") +
         "</div>";
-    }).join("") : '<div class="vazio">Ainda não há visitas neste período' + (S.c ? " nesta campanha" : "") + ".</div>";
+    }).join("") : '<div class="vazio">Ainda não há dados neste período' + (S.c ? " nesta campanha" : "") + ".</div>";
 
-    // Resumo
-    var k = [];
-    if (S.g === "front") {
-      var oferta = v["34"] || 0, ck = v.checkout || 0, vf = vd.front || 0;
-      k.push(["Visitantes", fmt(base), "entraram na 1ª tela", true]);
-      k.push(["Chegaram à oferta", fmt(oferta), pctTxt(pct(oferta, base)) + " dos visitantes"]);
+    // Resumo de cada visão
+    var k = [], receita = function (t) { return vd[t + "-centavos"] || 0; };
+    var front = vd.front || 0, up = vd.upsell || 0, dn = vd.downsell || 0, visit = v["01"] || 0;
+    if (S.v === "front") {
+      var oferta = v["34"] || 0, ck = v.checkout || 0;
+      k.push(["Visitantes", fmt(visit), "entraram na 1ª tela", true]);
+      k.push(["Chegaram à oferta", fmt(oferta), pctTxt(pct(oferta, visit)) + " dos visitantes"]);
       k.push(["Cliques no checkout", fmt(ck), pctTxt(pct(ck, oferta)) + " de quem viu a oferta"]);
-      k.push(["Vendas front", fmt(vf), pctTxt(pct(vf, base)) + " dos visitantes" + (vd["front-reembolso"] ? " · " + vd["front-reembolso"] + " reemb." : "")]);
-      k.push(["Receita front", reais(vd["front-centavos"] || 0), vf ? "ticket " + reais((vd["front-centavos"] || 0) / vf) : "Cakto"]);
+      k.push(["Vendas front", fmt(front), pctTxt(pct(front, visit)) + " dos visitantes" + (vd["front-reembolso"] ? " · " + vd["front-reembolso"] + " reemb." : "")]);
+      k.push(["Receita front", reais(receita("front")), front ? "ticket " + reais(receita("front") / front) : "Cakto"]);
+    } else if (S.v === "ofertas") {
+      var viu = v.oferta || 0, viuD = v.downsell || 0;
+      k.push(["Viram a oferta", fmt(viu), pctTxt(pct(viu, v["boas-vindas"] || 0)) + " de quem começou a avaliação", true]);
+      k.push(["Vendas upsell", fmt(up), pctTxt(pct(up, viu)) + " de quem viu a oferta"]);
+      k.push(["Vendas downsell", fmt(dn), pctTxt(pct(dn, viuD)) + " de quem viu o downsell"]);
+      k.push(["Take rate", pctTxt(pct(up + dn, front)), "compras front que levaram upsell ou downsell"]);
+      k.push(["Receita pós", reais(receita("upsell") + receita("downsell")), front ? reais((receita("upsell") + receita("downsell")) / front) + " a mais por cliente" : "upsell + downsell"]);
+    } else if (S.v === "entrega") {
+      var entrou = v["login-ok"] || 0, dias = d.porDia.length;
+      k.push(["Compras front", fmt(front), "clientes novos no período", true]);
+      k.push(["Acessaram a área", fmt(entrou), pctTxt(pct(entrou, front)) + " das compras do período"]);
+      k.push(["Clientes únicos na área", fmt(d.clientes), "pessoas diferentes que usaram a área"]);
+      k.push(["Média por dia", fmt(Math.round(d.porDia.reduce(function (s, x) { return s + (x.clientes || 0); }, 0) / Math.max(1, dias))), "clientes únicos por dia"]);
+      k.push(["Abriram e-books", fmt(v.ebook || 0), fmt(v.baixar || 0) + " baixaram o PDF"]);
+      k.push(["Usaram a agenda", fmt(v.agenda || 0), "abriram o plano de jejum"]);
     } else {
-      var compras = vd.front || 0, entrou = v["login-ok"] || 0, viu = v.oferta || 0, up = vd.upsell || 0, dn = vd.downsell || 0;
-      k.push(["Compras front", fmt(compras), "base do pós-venda", true]);
-      k.push(["Entraram na área", fmt(entrou), pctTxt(pct(entrou, compras)) + " das compras"]);
-      k.push(["Viram a oferta", fmt(viu), pctTxt(pct(viu, entrou)) + " de quem entrou"]);
-      k.push(["Vendas upsell", fmt(up), pctTxt(pct(up, compras)) + " das compras front"]);
-      k.push(["Vendas downsell", fmt(dn), pctTxt(pct(dn, compras)) + " das compras front"]);
-      k.push(["Receita pós", reais((vd["upsell-centavos"] || 0) + (vd["downsell-centavos"] || 0)), "upsell + downsell"]);
+      var total = receita("front") + receita("upsell") + receita("downsell");
+      k.push(["Visitantes", fmt(visit), "entraram no quiz", true]);
+      k.push(["Compraram o front", fmt(front), pctTxt(pct(front, visit)) + " dos visitantes"]);
+      k.push(["Upsell + downsell", fmt(up + dn), pctTxt(pct(up + dn, front)) + " das compras front"]);
+      k.push(["Receita total", reais(total), "front + upsell + downsell"]);
+      k.push(["Receita por visitante", reais(visit ? total / visit : 0), "quanto cada visita rende"]);
+      k.push(["Ticket por cliente", reais(front ? total / front : 0), "média com upsell e downsell"]);
     }
     $("kpis").innerHTML = k.map(function (x) { return '<div class="kpi' + (x[3] ? " destaque" : "") + '"><small>' + x[0] + "</small><strong>" + x[1] + "</strong><span>" + x[2] + "</span></div>"; }).join("");
 
+    decisoes(d);
     grafico(d, passos);
   }
 
-  // Colunas por dia: visitantes da 1ª tela (front) ou compras front (pós)
+  // Upsell e Downsell: quem aceitou, recusou ou saiu sem responder (barra empilhada + compras aprovadas)
+  function decisoes(d) {
+    var bloco = $("decisoes");
+    if (S.v !== "ofertas") { bloco.hidden = true; return; }
+    bloco.hidden = false;
+    var v = d.passos, vd = d.vendas;
+    function cartao(nome, viram, aceitou, recusou, compras, rotA, rotR) {
+      var sem = Math.max(0, viram - aceitou - recusou), pa = pct(aceitou, viram), pr = pct(recusou, viram), ps = pct(sem, viram);
+      return '<div class="decisao"><div class="decisao-topo"><h3>' + nome + "</h3><span>" + fmt(viram) + " viram</span></div>" +
+        '<div class="empilhada" role="img" aria-label="' + nome + ": " + pctTxt(pa) + " aceitaram, " + pctTxt(pr) + " recusaram, " + pctTxt(ps) + ' sem resposta">' +
+          '<i class="aceita" style="width:' + pa.toFixed(1) + '%" data-dica="Aceitaram (' + rotA + ')|' + fmt(aceitou) + " · " + pctTxt(pa) + '"></i>' +
+          '<i class="recusa" style="width:' + pr.toFixed(1) + '%" data-dica="Recusaram (' + rotR + ')|' + fmt(recusou) + " · " + pctTxt(pr) + '"></i>' +
+          '<i class="sem" style="width:' + ps.toFixed(1) + '%" data-dica="Saíram sem responder|' + fmt(sem) + " · " + pctTxt(ps) + '"></i></div>' +
+        '<ul class="decisao-leg"><li><b class="aceita"></b>Aceitaram <strong>' + pctTxt(pa) + "</strong> <small>" + fmt(aceitou) + '</small></li>' +
+        '<li><b class="recusa"></b>Recusaram <strong>' + pctTxt(pr) + "</strong> <small>" + fmt(recusou) + '</small></li>' +
+        '<li><b class="sem"></b>Sem resposta <strong>' + pctTxt(ps) + "</strong> <small>" + fmt(sem) + "</small></li></ul>" +
+        '<p class="decisao-venda">Compras aprovadas: <strong>' + fmt(compras) + "</strong> · " + pctTxt(pct(compras, viram)) + " de quem viu" + (aceitou ? " · " + pctTxt(pct(compras, aceitou)) + " de quem clicou" : "") + "</p></div>";
+    }
+    bloco.innerHTML = cartao("Upsell · Chá Turbo R$47", v.oferta || 0, v["oferta-quero"] || 0, v.downsell || 0, vd.upsell || 0, "clicou em quero", "foi para o downsell") +
+      cartao("Downsell · Chá Turbo R$23", v.downsell || 0, v["downsell-quero"] || 0, v["downsell-nao"] || 0, vd.downsell || 0, "clicou em quero", "clicou em não quero");
+  }
+
+  // Colunas por dia: a métrica principal de cada visão
   function grafico(d, passos) {
     var bloco = $("bloco-dia");
     if (d.porDia.length < 2) { bloco.hidden = true; return; }
     bloco.hidden = false;
-    var primeiro = (passos.find(function (p) { return !p.evento; }) || {}).id;
-    var serie = d.porDia.map(function (x) { return { dia: x.dia, n: S.g === "front" ? (x.passos[primeiro] || 0) : (x.passos["login-ok"] || 0) }; });
-    $("dia-legenda").textContent = S.g === "front" ? "Visitantes na 1ª tela por dia" : "Pessoas que entraram na área por dia";
+    var F = {
+      front: ["Visitantes na 1ª tela por dia", function (x) { return x.passos["01"] || 0; }],
+      ofertas: ["Pessoas que viram a oferta do upsell por dia", function (x) { return x.passos.oferta || 0; }],
+      entrega: ["Clientes únicos que acessaram a área por dia", function (x) { return x.clientes || 0; }],
+      completo: ["Visitantes na 1ª tela por dia", function (x) { return x.passos["01"] || 0; }]
+    }[S.v];
+    var serie = d.porDia.map(function (x) { return { dia: x.dia, n: F[1](x) }; });
+    $("dia-legenda").textContent = F[0];
     var max = Math.max(1, Math.max.apply(null, serie.map(function (s) { return s.n; })));
     var W = 1000, H = 140, larg = W / serie.length, col = Math.max(2, Math.min(28, larg - 4));
     var passo = Math.ceil(serie.length / 10);
-    var svg = '<svg viewBox="0 0 ' + W + " " + (H + 18) + '" preserveAspectRatio="none" role="img" aria-label="' + esc($("dia-legenda").textContent) + '">';
+    var svg = '<svg viewBox="0 0 ' + W + " " + (H + 18) + '" preserveAspectRatio="none" role="img" aria-label="' + esc(F[0]) + '">';
     [0.5, 1].forEach(function (f) { var y = H - H * f; svg += '<line class="grade" x1="0" x2="' + W + '" y1="' + y + '" y2="' + y + '"/><text class="eixo" x="0" y="' + (y - 3) + '">' + fmt(Math.round(max * f)) + "</text>"; });
     serie.forEach(function (s, i) {
       var h = s.n / max * (H - 6), x = i * larg + (larg - col) / 2;
@@ -343,7 +421,7 @@
   });
 
   // Filtros
-  document.querySelectorAll(".abas button").forEach(function (b) { b.addEventListener("click", function () { S.g = b.dataset.g; try { sessionStorage.setItem("painel_g", S.g); } catch (e) {} marcarFiltros(); carregar(); }); });
+  document.querySelectorAll(".abas button").forEach(function (b) { b.addEventListener("click", function () { S.v = b.dataset.aba; try { sessionStorage.setItem("painel_v", S.v); } catch (e) {} trocarVisao(); }); });
   document.querySelectorAll(".periodo > button").forEach(function (b) { b.addEventListener("click", function () { S.p = b.dataset.p; try { sessionStorage.setItem("painel_p", S.p); } catch (e) {} marcarFiltros(); carregar(); }); });
   ["f-de", "f-ate"].forEach(function (id) { $(id).addEventListener("change", function () { S.p = "custom"; S.de = $("f-de").value; S.ate = $("f-ate").value; if (S.de > S.ate) { var t = S.de; S.de = S.ate; S.ate = t; } marcarFiltros(); carregar(); }); });
   $("f-camp").addEventListener("change", function () { S.c = this.value; carregar(); });
@@ -379,12 +457,12 @@
 
     function aplicar() { mundo.style.transform = "translate(" + vista.x + "px," + vista.y + "px) scale(" + vista.k + ")"; desenharMapa(); }
     function padrao(passos) { var p = {}; passos.forEach(function (x, i) { p[x.id] = [i * PASSO_X, 0]; }); return p; }
-    function chave() { return S.f + ":" + S.g; }
+    function chave() { return S.f + ":" + S.v; }
     function carregarLayout(cb) {
       if (carregadoDe === chave()) return cb();
-      api("layout", { f: S.f, g: S.g }).then(function (r) { carregadoDe = chave(); pos = (r && r.pos) || {}; primeiraVez = true; cb(); });
+      api("layout", { f: S.f, g: S.v }).then(function (r) { carregadoDe = chave(); pos = (r && r.pos) || {}; primeiraVez = true; cb(); });
     }
-    function salvar() { clearTimeout(salvarT); salvarT = setTimeout(function () { api("layout", { f: S.f, g: S.g }, { pos: pos }); }, 600); }
+    function salvar() { clearTimeout(salvarT); salvarT = setTimeout(function () { api("layout", { f: S.f, g: S.v }, { pos: pos }); }, 600); }
     function elNo(id) { return nosEl.querySelector('.no[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]'); }
 
     var ultimo = null;
@@ -396,16 +474,16 @@
         nosEl.innerHTML = c.linhas.map(function (l, i) {
           var dt = difTxt(l), alta = c.maiores.indexOf(l.p.id) >= 0, xy = pos[l.p.id];
           // saúde da tela pela queda em relação à anterior: verde até 5%, amarelo até 12%, vermelho acima
-          var saude = l.queda == null || l.p.evento ? "" : l.queda > 0.12 ? " critica" : l.queda > 0.05 ? " atencao" : " boa";
-          return '<div class="no' + (l.p.evento ? " evento" : "") + (alta ? " alta" : "") + saude + '" data-id="' + esc(l.p.id) + '" data-i="' + i + '" style="left:' + xy[0] + "px;top:" + xy[1] + 'px;width:' + LARG + 'px">' +
+          var saude = l.queda == null || l.p.evento || l.p.venda ? "" : l.queda > 0.12 ? " critica" : l.queda > 0.05 ? " atencao" : " boa";
+          return '<div class="no' + (l.p.evento ? " evento" : "") + (l.p.venda ? " venda" : "") + (alta ? " alta" : "") + saude + '" data-id="' + esc(l.p.id) + '" data-i="' + i + '" style="left:' + xy[0] + "px;top:" + xy[1] + 'px;width:' + LARG + 'px">' +
             '<div class="no-dados"><span class="r">Retenção</span><span class="v">' + (c.base ? pctTxt(l.ret) : "—") + '</span>' +
-            '<span class="r">Visualizações</span><span class="v">' + fmt(l.n) + "</span>" +
+            '<span class="r">' + (l.p.venda ? "Vendas" : "Visualizações") + '</span><span class="v">' + fmt(l.n) + "</span>" +
             '<span class="cmp ' + dt.cls + '">' + esc(dt.txt) + "</span></div>" +
-            '<div class="no-corpo"><div class="topo-no"><span class="num-no">' + (l.p.evento ? "ev" : esc(l.p.n)) + "</span><strong>" + esc(l.p.nome) + "</strong>" +
-            (l.queda != null && !l.p.evento ? '<span class="selo-saude">' + (l.queda > 0.12 ? "▼ crítica" : l.queda > 0.05 ? "atenção" : "ok") + "</span>" : "") + "</div>" +
+            '<div class="no-corpo"><div class="topo-no"><span class="num-no">' + (l.p.venda ? "R$" : l.p.evento ? "ev" : esc(l.p.n)) + "</span><strong>" + esc(l.p.nome) + "</strong>" +
+            (l.queda != null && !l.p.evento && !l.p.venda ? '<span class="selo-saude">' + (l.queda > 0.12 ? "▼ crítica" : l.queda > 0.05 ? "atenção" : "ok") + "</span>" : "") + "</div>" +
             "<p>" + esc(l.p.titulo) + "</p>" +
             '<div class="barra-no"><i style="width:' + Math.min(100, l.ret).toFixed(1) + '%"></i></div>' +
-            '<a href="' + esc(l.p.editar) + '" target="_blank" rel="noopener">' + ICO_EDITAR + "Editar</a></div></div>";
+            (l.p.editar ? '<a href="' + esc(l.p.editar) + '" target="_blank" rel="noopener">' + ICO_EDITAR + "Editar</a>" : '<span class="sem-editar">dado da Cakto</span>') + "</div></div>";
         }).join("");
         ligar();
         desenharHud(c);
@@ -449,17 +527,16 @@
       lig.innerHTML = html;
     }
 
-    // Barra de comando no topo: as conversões do funil e o maior gargalo, com atalho para ir até ele
+    // Barra de comando no topo: as conversões da visão e o ponto de maior evasão, com atalho para ir até ele
     function desenharHud(c) {
-      var v = S.d.passos, vd = S.d.vendas, h = [];
-      if (S.g === "front") {
-        h.push(["Entraram", fmt(c.base)], ["Chegaram à oferta", pctTxt(pct(v["34"] || 0, c.base))], ["Checkout", pctTxt(pct(v.checkout || 0, c.base))], ["Vendas", fmt(vd.front || 0) + " · " + pctTxt(pct(vd.front || 0, c.base))]);
-      } else {
-        h.push(["Compras front", fmt(vd.front || 0)], ["Entraram na área", fmt(v["login-ok"] || 0)], ["Viram a oferta", fmt(v.oferta || 0)], ["Upsell + downsell", fmt((vd.upsell || 0) + (vd.downsell || 0))]);
-      }
-      var pior = null; c.linhas.forEach(function (l, i) { if (!l.p.evento && l.queda != null && (!pior || l.queda > pior.l.queda)) pior = { l: l, i: i }; });
+      var v = S.d.passos, vd = S.d.vendas, h = [], visit = v["01"] || 0, front = vd.front || 0;
+      if (S.v === "front") h.push(["Entraram", fmt(visit)], ["Chegaram à oferta", pctTxt(pct(v["34"] || 0, visit))], ["Checkout", pctTxt(pct(v.checkout || 0, visit))], ["Vendas", fmt(front) + " · " + pctTxt(pct(front, visit))]);
+      else if (S.v === "ofertas") h.push(["Viram a oferta", fmt(v.oferta || 0)], ["Upsell aceito", pctTxt(pct(v["oferta-quero"] || 0, v.oferta || 0))], ["Downsell aceito", pctTxt(pct(v["downsell-quero"] || 0, v.downsell || 0))], ["Vendas", fmt((vd.upsell || 0) + (vd.downsell || 0))]);
+      else if (S.v === "entrega") h.push(["Compras", fmt(front)], ["Acessaram", pctTxt(pct(v["login-ok"] || 0, front))], ["Clientes únicos", fmt(S.d.clientes)], ["Abriram e-book", fmt(v.ebook || 0)]);
+      else h.push(["Visitantes", fmt(visit)], ["Compraram", pctTxt(pct(front, visit))], ["Upsell/downsell", pctTxt(pct((vd.upsell || 0) + (vd.downsell || 0), front))], ["Na área", fmt(v["login-ok"] || 0)]);
+      var pior = null; c.linhas.forEach(function (l, i) { if (!l.p.evento && !l.p.venda && l.queda != null && (!pior || l.queda > pior.l.queda)) pior = { l: l, i: i }; });
       hud.innerHTML = h.map(function (x, i) { return (i ? '<span class="hud-seta">→</span>' : "") + '<span class="hud-item"><small>' + x[0] + "</small><b>" + x[1] + "</b></span>"; }).join("") +
-        (pior && pior.l.queda > 0 ? '<button type="button" class="hud-gargalo" data-i="' + pior.i + '"><span class="ponto-queda"></span>Maior gargalo: <b>' + esc(pior.l.p.n + " · " + pior.l.p.nome) + "</b> −" + pctTxt(pior.l.queda * 100) + "<em>ver</em></button>" : "");
+        (pior && pior.l.queda > 0 ? '<button type="button" class="hud-gargalo" data-i="' + pior.i + '" title="Tela onde mais pessoas abandonam o funil"><span class="ponto-queda"></span>Maior evasão: <b>' + esc((pior.l.p.n ? pior.l.p.n + " · " : "") + pior.l.p.nome) + "</b> −" + pctTxt(pior.l.queda * 100) + "<em>ver</em></button>" : "");
       var g = hud.querySelector(".hud-gargalo");
       if (g) g.addEventListener("click", function () { irPara(Number(g.dataset.i)); });
     }
@@ -578,7 +655,7 @@
     $("fl-nave").addEventListener("click", function () { nave.voar(); });
     $("fl-organizar").addEventListener("click", function () {
       if (!window.confirm("Voltar todas as telas para a posição original? A organização atual será perdida para toda a equipe.")) return;
-      pos = {}; focado = null; api("layout", { f: S.f, g: S.g }, { pos: {}, limpar: true }); primeiraVez = true; desenhar();
+      pos = {}; focado = null; api("layout", { f: S.f, g: S.v }, { pos: {}, limpar: true }); primeiraVez = true; desenhar();
     });
     window.addEventListener("resize", function () { if (!caixa.hidden) { medirFx(); desenharMapa(); } });
 

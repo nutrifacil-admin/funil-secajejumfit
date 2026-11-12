@@ -1,7 +1,10 @@
 /* API da área de membros (/membros/). As páginas chamam api/<acao>.php e o vercel.json manda para cá:
    login | estado | respostas | concluir-funil | sair | arquivo
    Quem identifica a pessoa é o cookie de sessão; o e-mail só é enviado no login. */
-const { normEmail, lerCliente, salvarCliente, criarSessao, sairSessao, emailDaSessao, json, corpo } = require("./_lib");
+const crypto = require("crypto");
+const { normEmail, lerCliente, salvarCliente, criarSessao, sairSessao, emailDaSessao, json, corpo, pipeline, hojeBR } = require("./_lib");
+// Painel: cliente único que acessou a área no dia (HyperLogLog com um hash do e-mail, nunca o e-mail)
+function contarAcesso(email) { pipeline([["PFADD", "an:jejum:clientes:" + hojeBR(), crypto.createHash("sha256").update("sjf|" + email).digest("hex").slice(0, 24)]]).catch(() => {}); }
 
 const PASTA = "/e-368c4e0875/";
 // E-books: id do módulo → PDF (as páginas ficam em /e-368c4e0875/p/<id>/pagina-001.jpg …)
@@ -85,10 +88,11 @@ module.exports = async (req, res) => {
     return json(res, 401, { ok: false, semLogin: true });
   }
 
-  if (acao === "estado") return json(res, 200, { destino: destinoDe(c), front: !!c.front, upsell: !!c.cha });
+  if (acao === "estado") { await contarAcesso(email); return json(res, 200, { destino: destinoDe(c), front: !!c.front, upsell: !!c.cha }); }
 
   if (acao === "respostas") {
     if (req.method === "GET") {
+      await contarAcesso(email);
       const r = c.respostas && typeof c.respostas.acorda === "number" ? c.respostas : (c.respostas ? validar(c.respostas) : null);
       return json(res, 200, { ok: true, respostas: r || null });
     }

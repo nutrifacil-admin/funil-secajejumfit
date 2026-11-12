@@ -96,6 +96,7 @@
     const chave = param('area');
     if (!AREAS[chave]) { app.innerHTML = '<p class="aviso-simples">Página não encontrada. <a href="./">Voltar ao início</a></p>'; return; }
     const a = AREAS[chave], d = window.MODULOS[a.produto], livre = liberado(chave), lista = modulosDa(chave);
+    if (window.SJ_RASTRO) window.SJ_RASTRO('pos', 'conteudo');
     document.title = a.nome + ' · Seca Jejum';
     app.innerHTML = `
       <div class="topo-simples">${voltar('./', 'Início')}</div>
@@ -123,6 +124,7 @@
     const m = a && modulosDa(chave).find(x => x.id === param('m'));
     if (!m) { app.innerHTML = '<p class="aviso-simples">Página não encontrada. <a href="./">Voltar ao início</a></p>'; return; }
     document.title = m.titulo + ' · Seca Jejum';
+    if (window.SJ_RASTRO && liberado(chave)) window.SJ_RASTRO('pos', 'ebook');
     const topo = `<div class="topo-simples">${voltar('conteudo.html?area=' + chave, a.nome)}</div><h1 class="ebook-titulo">${esc(m.titulo)}</h1>`;
     if (!liberado(chave)) {
       // nada do e-book entra na página
@@ -136,6 +138,8 @@
     app.innerHTML = topo +
       `<a class="btn-baixar" href="${esc(arquivoUrl(a.produto, m.id, m.pdf, '&baixar=1'))}">${ic('baixar')}Baixar o PDF</a>
       <div class="paginas">${m.paginas.map((t, n) => `<img class="pagina" data-src="${esc(arquivoUrl(a.produto, m.id, 'pagina-' + String(n + 1).padStart(3, '0') + '.jpg'))}" width="${t[0]}" height="${t[1]}" style="aspect-ratio:${t[0]}/${t[1]}" alt="Página ${n + 1}">`).join('')}</div>`;
+    const bx = app.querySelector('.btn-baixar');
+    if (bx) bx.addEventListener('click', () => { if (window.SJ_RASTRO) window.SJ_RASTRO('pos', 'baixar'); });
     // cada página só baixa quando chega perto da tela (como na v1)
     const obs = new IntersectionObserver(es => es.forEach(e => {
       if (e.isIntersecting) { e.target.src = e.target.dataset.src; obs.unobserve(e.target); }

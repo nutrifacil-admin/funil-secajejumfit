@@ -302,3 +302,32 @@ select, .datas input { height: 34px; padding: 0 10px; border-radius: 9px; border
 @keyframes chegada { 20% { box-shadow: 0 0 0 2px #a78bfa, 0 0 90px rgba(167,139,250,.75); transform: scale(1.04); } }
 .flow.em-voo .no-dados { transition: none; }
 @media (max-width: 860px) { .flow-mapa { width: 150px; height: 75px; bottom: 14px; } .hud-gargalo { margin-left: 0; } }
+
+/* ===================== Visões: vendas, decisões ===================== */
+.etiqueta.venda { color: #a7f3d0; border-color: rgba(52,211,153,.4); background: rgba(52,211,153,.08); }
+.linha.venda .trilho i { background: #34d399; }
+.linha.venda .tela-nome strong { color: #d1fae5; }
+.no.venda .no-dados { border-color: rgba(52,211,153,.6); box-shadow: 0 0 0 3px rgba(52,211,153,.08); }
+.no.venda .no-corpo { background: linear-gradient(160deg, rgba(52,211,153,.10), var(--sup2) 60%); }
+.no.venda .num-no { background: rgba(52,211,153,.2); color: #d1fae5; }
+.no.venda .barra-no i { background: #34d399; }
+.sem-editar { font: 11px var(--mono); color: var(--txt3); }
+.abas { flex-wrap: wrap; }
+
+.decisoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.decisao { padding: 16px; border-radius: 14px; background: var(--sup); border: 1px solid var(--borda); }
+.decisao-topo { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+.decisao-topo h3 { margin: 0; font: 600 15px var(--titulo); }
+.decisao-topo span { font: 500 12px var(--mono); color: var(--txt3); }
+.empilhada { display: flex; gap: 2px; height: 14px; border-radius: 4px; overflow: hidden; background: rgba(255,255,255,.04); }
+.empilhada i { display: block; height: 100%; min-width: 0; }
+.aceita { background: #4f8cff; } .recusa { background: #8b7bff; } .sem { background: #2a3550; }
+.empilhada i:first-child { border-radius: 4px 0 0 4px; } .empilhada i:last-child { border-radius: 0 4px 4px 0; }
+.decisao-leg { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.decisao-leg li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; font-size: 12px; color: var(--txt2); }
+.decisao-leg b { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.decisao-leg strong { font: 600 15px var(--mono); color: var(--txt); }
+.decisao-leg small { color: var(--txt3); font: 11px var(--mono); }
+.decisao-venda { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--borda); font-size: 12.5px; color: var(--txt2); }
+.decisao-venda strong { color: #a7f3d0; font-family: var(--mono); }
+@media (max-width: 860px) { .abas button { padding: 7px 10px; font-size: 13px; } }
