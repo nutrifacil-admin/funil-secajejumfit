@@ -22,6 +22,7 @@ module.exports = async (req, res) => {
         cmds.push(["HINCRBY", base, p, 1]);
         if (camp) cmds.push(["HINCRBY", base + ":camp", camp + "|" + p, 1]);
       });
+      cmds.push(["SET", "an:" + f + ":ultimo-ev", String(Date.now())]);   // Diagnóstico do Flowex: hora do último registro
       await pipeline(cmds);
     }
   } catch (e) { /* contador nunca atrapalha o funil */ }

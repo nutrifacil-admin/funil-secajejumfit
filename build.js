@@ -69,3 +69,61 @@ console.log("Funil \"" + funil + "\" montado em dist/");
   fs.writeFileSync(path.join(dist, "flowex-mapa.js"), "window.PAINEL_MAPA = Object.assign(window.PAINEL_MAPA || {}, " + JSON.stringify({ jejum: { nome: "Seca Jejum", front, pos } }) + ");\n");
   console.log("Mapa do painel: " + front.length + " passos no front, " + pos.length + " no pós-venda");
 }
+
+/* Lista de verificação do Flowex (botão "Verificar agora" do Diagnóstico): tudo o que este produto precisa no ar —
+   páginas, arquivos do site, checkouts, vídeos, área de membros, e-books e rastreamento. Gerada a cada publicação a partir
+   dos próprios arquivos de configuração, então um checkout ou vídeo trocado já entra na verificação sozinho.
+   Fica na pasta privada dos e-books (o Flowex sabe o endereço; não é indexada). */
+{
+  const REPO = "https://github.com/nutrifacil-admin/funil-secajejumfit/blob/main/";
+  const ler = (f) => fs.readFileSync(path.join(__dirname, f), "utf8");
+  const editar = (f, busca) => { const l = ler(f).split("\n"); const i = busca ? l.findIndex((x) => x.indexOf(busca) >= 0) : -1; return REPO + f + (i >= 0 ? "#L" + (i + 1) : ""); };
+  const w = {}; new Function("window", ler(funil + "/config.js"))(w);
+  const CFG = w.SJ_CFG;
+  const M = new Function(ler(funil + "/membros/js/config.js") + "; return { QUIZ: QUIZ, SUPORTE_WHATSAPP: SUPORTE_WHATSAPP };")();
+  const wm = {}; new Function("window", ler(funil + "/membros/js/modulos.js"))(wm);
+  const PASTA = "/e-368c4e0875/";
+  const pixel = (ler(funil + "/index.html").match(/fbq\('init',\s*'(\d+)'/) || [])[1] || "";
+  const itens = [];
+  const add = (g, nome, url, tipo, extra) => itens.push(Object.assign({ g, nome, url, tipo }, extra || {}));
+
+  add("Páginas", "Front (quiz + VSL)", "/", "pagina", { contem: "motor.js", editar: editar(funil + "/index.html") });
+  add("Páginas", "Página de obrigado", "/obrigado", "pagina", { contem: "/membros", editar: editar(funil + "/obrigado.html") });
+  add("Páginas", "Login da área de membros", "/membros/entrar", "pagina", { contem: "entrada.js", editar: editar(funil + "/membros/entrar.html") });
+  add("Páginas", "Avaliação e oferta do upsell", "/membros/quiz", "pagina", { contem: "quiz.js", editar: editar(funil + "/membros/quiz.html") });
+  add("Páginas", "Meus planos (início da área)", "/membros/", "pagina", { contem: "inicio.js", editar: editar(funil + "/membros/index.html") });
+  add("Páginas", "Agenda de jejum", "/membros/agenda", "pagina", { editar: editar(funil + "/membros/agenda.html") });
+  add("Páginas", "Lista de e-books", "/membros/conteudo", "pagina", { editar: editar(funil + "/membros/conteudo.html") });
+  add("Páginas", "Leitor de e-book", "/membros/modulo", "pagina", { editar: editar(funil + "/membros/modulo.html") });
+
+  add("Checkouts", "Checkout do front", CFG.checkout, "checkout", { editar: editar(funil + "/config.js", "checkout:") });
+  add("Checkouts", "Checkout do upsell", M.QUIZ.checkoutUpsell, "checkout", { editar: editar(funil + "/membros/js/config.js", "checkoutUpsell") });
+  add("Checkouts", "Checkout do downsell", M.QUIZ.checkoutDownsell, "checkout", { editar: editar(funil + "/membros/js/config.js", "checkoutDownsell") });
+
+  add("Vídeos", "VSL do front", CFG.vsl.src, "video", { editar: editar(funil + "/config.js", "src:") });
+  add("Vídeos", "VSL do upsell", M.QUIZ.vsl.src, "video", { editar: editar(funil + "/membros/js/config.js", "src:") });
+
+  add("Área de membros", "Sistema de login e acesso", "/membros/api/estado.php", "api", { contem: "destino", editar: editar("api/membros.js") });
+  add("Área de membros", "Suporte no WhatsApp", "https://wa.me/" + M.SUPORTE_WHATSAPP.numero, "link", { editar: editar(funil + "/membros/js/config.js", "SUPORTE_WHATSAPP =") });
+  Object.keys(wm.MODULOS).forEach((prod) => {
+    wm.MODULOS[prod].modulos.forEach((m) => {
+      const n = (m.paginas || []).length, pag = (i) => PASTA + "p/" + m.id + "/pagina-" + String(i).padStart(3, "0") + ".jpg";
+      add("E-books", m.titulo + (prod === "upsell" ? " (upsell)" : ""), PASTA + m.pdf, "ebook",
+        { paginas: n ? [pag(1), pag(n)] : [], editar: editar(funil + "/membros/js/modulos.js", '"id": "' + m.id + '"') });
+    });
+  });
+
+  add("Arquivos do site", "Motor do funil (motor.js)", "/motor.js", "script", { contem: "SJ_", editar: editar("motor/motor.js") });
+  add("Arquivos do site", "Configuração do front (config.js)", "/config.js", "script", { contem: "SJ_CFG", editar: editar(funil + "/config.js") });
+  add("Arquivos do site", "Telas do quiz (telas.js)", "/telas.js", "script", { contem: "SJ_TELAS", editar: editar(funil + "/telas.js") });
+  add("Arquivos do site", "Configuração da área (membros)", "/membros/js/config.js", "script", { contem: "QUIZ", editar: editar(funil + "/membros/js/config.js") });
+
+  add("Rastreamento", "Pixel do Meta no front", "/", "pagina", { contem: pixel ? "fbq('init', '" + pixel + "')" : "fbq('init'", detalhe: pixel ? "Pixel " + pixel : "", editar: editar(funil + "/index.html", "fbq('init'") });
+  add("Rastreamento", "Pixel do Meta no obrigado", "/obrigado", "pagina", { contem: pixel ? "fbq('init', '" + pixel + "')" : "fbq('init'", detalhe: pixel ? "Pixel " + pixel : "", editar: editar(funil + "/obrigado.html", "fbq('init'") });
+  add("Rastreamento", "Contador do Flowex (rastro.js)", "/rastro.js", "script", { contem: "SJ_RASTRO", editar: editar(funil + "/rastro.js") });
+  add("Rastreamento", "Recebimento das visitas (api/ev)", "/api/ev", "api", { metodo: "POST", status: [204], editar: editar("api/ev.js") });
+  add("Rastreamento", "Webhook de vendas da Cakto", "/api/cakto", "api", { contem: "webhook", editar: editar("api/cakto.js") });
+
+  fs.writeFileSync(path.join(dist, "e-368c4e0875", "flowex-check.json"), JSON.stringify({ produto: funil, gerado: new Date().toISOString(), itens }));
+  console.log("Verificação do Flowex: " + itens.length + " itens");
+}
