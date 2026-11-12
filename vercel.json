@@ -2,6 +2,10 @@
   "buildCommand": "node build.js jejum",
   "outputDirectory": "dist",
   "cleanUrls": true,
+  "redirects": [
+    { "source": "/painel", "destination": "https://flowex.site", "permanent": false },
+    { "source": "/painel/(.*)", "destination": "https://flowex.site", "permanent": false }
+  ],
   "rewrites": [
     { "source": "/membros/api/:acao.php", "destination": "/api/membros?acao=:acao" },
     { "source": "/e-368c4e0875/baixar/:arquivo", "destination": "/e-368c4e0875/:arquivo" }
@@ -27,7 +31,7 @@
       ]
     },
     {
-      "source": "/(membros|obrigado|painel)(.*)",
+      "source": "/(membros|obrigado)(.*)",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
       ]

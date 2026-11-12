@@ -11,9 +11,9 @@ const motor = fs.readFileSync(path.join(__dirname, "motor/motor.js"), "utf8");
 fs.writeFileSync(path.join(dist, "motor.js"), "window.SJ_CSS = " + JSON.stringify(css) + ";\n" + motor);
 console.log("Funil \"" + funil + "\" montado em dist/");
 
-/* Mapa do painel (/painel): a lista de passos de cada etapa do funil, com o título e o arquivo/linha onde editar.
+/* Mapa do funil para o Flowex (flowex.site): a lista de passos de cada etapa do funil, com o título e o arquivo/linha onde editar.
    É gerado a cada publicação, então o botão "Editar" sempre aponta para a linha certa. */
-if (fs.existsSync(path.join(__dirname, funil, "painel"))) {
+{
   const REPO = "https://github.com/nutrifacil-admin/funil-secajejumfit/blob/main/";
   const ler = (f) => fs.readFileSync(path.join(__dirname, f), "utf8");
   const linha = (f, busca) => { const l = ler(f).split("\n"); const i = l.findIndex((x) => x.indexOf(busca) >= 0); return i < 0 ? 1 : i + 1; };
@@ -65,6 +65,7 @@ if (fs.existsSync(path.join(__dirname, funil, "painel"))) {
     return Object.assign({ n: x.evento ? "" : i + 1 }, x);
   });
   let n = 0; pos.forEach((p) => { if (!p.evento) p.n = ++n; });
-  fs.writeFileSync(path.join(dist, "painel", "mapa.js"), "window.PAINEL_MAPA = " + JSON.stringify({ jejum: { nome: "Seca Jejum", front, pos } }) + ";\n");
+  // publicado em https://<domínio>/flowex-mapa.js — o Flowex (flowex.site) carrega e junta com os mapas dos outros produtos
+  fs.writeFileSync(path.join(dist, "flowex-mapa.js"), "window.PAINEL_MAPA = Object.assign(window.PAINEL_MAPA || {}, " + JSON.stringify({ jejum: { nome: "Seca Jejum", front, pos } }) + ");\n");
   console.log("Mapa do painel: " + front.length + " passos no front, " + pos.length + " no pós-venda");
 }
