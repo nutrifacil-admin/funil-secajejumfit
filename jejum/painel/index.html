@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow">
-  <title>Flowex · Retenção de funis</title>
+  <title>Flowex · Gerenciador de Produtos</title>
   <meta name="theme-color" content="#05070d">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M7 28c6 0 6-16 13-16s7 16 13 16' fill='none' stroke='%239db0ff' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='7' cy='28' r='4' fill='%237dd3fc'/%3E%3Ccircle cx='20' cy='12' r='4' fill='%239db0ff'/%3E%3Ccircle cx='33' cy='28' r='4' fill='%23a78bfa'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/painel/painel.css?v=6">
+  <link rel="stylesheet" href="/painel/painel.css?v=7">
 </head>
 <body>
   <!-- Entrada: galáxia de dados -->
@@ -21,11 +21,12 @@
       <div class="selo-sistema"><span class="pulso"></span>FLOWEX v1 · BETA</div>
       <div class="marca-login">
         <svg class="flowex-logo" viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="fxg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7dd3fc"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><path d="M7 28c6 0 6-16 13-16s7 16 13 16" fill="none" stroke="url(#fxg)" stroke-width="2.6" stroke-linecap="round"/><circle cx="7" cy="28" r="3.6" fill="#7dd3fc"/><circle cx="20" cy="12" r="3.6" fill="#9db0ff"/><circle cx="33" cy="28" r="3.6" fill="#a78bfa"/></svg>
-        <div><strong>Flowex</strong><span>Retenção de funis · dados em tempo real</span></div>
+        <div><strong>Flowex</strong><span>Gerenciador de Produtos</span></div>
       </div>
       <label>E-mail<input id="l-email" type="email" autocomplete="username" placeholder="voce@email.com" required></label>
       <label>Senha<input id="l-senha" type="password" autocomplete="current-password" placeholder="••••••••" required></label>
       <p id="l-erro" class="erro" role="alert" hidden></p>
+      <label class="lembrar"><input type="checkbox" id="l-lembrar" checked><span>Manter e-mail e senha salvos neste navegador</span></label>
       <button id="l-botao" type="submit"><span>Entrar no painel</span></button>
       <p class="rodape-login">Acesso restrito à equipe · conexão criptografada</p>
     </form>
@@ -126,6 +127,14 @@
 
   <div id="tooltip" class="tooltip" hidden></div>
 
+  <dialog id="d-sair" class="dialogo">
+    <form id="form-sair" method="dialog">
+      <h3>Sair do Flowex</h3>
+      <label class="lembrar"><input type="checkbox" id="sair-lembrar" checked><span>Manter meu e-mail e senha salvos neste navegador para entrar mais rápido</span></label>
+      <div class="acoes"><button type="button" id="sair-cancelar" class="sec">Cancelar</button><button type="submit">Sair</button></div>
+    </form>
+  </dialog>
+
   <dialog id="d-senha" class="dialogo">
     <form id="form-senha" method="dialog">
       <h3>Trocar minha senha</h3>
@@ -137,6 +146,6 @@
   </dialog>
 
   <script src="/painel/mapa.js?v=4"></script>
-  <script src="/painel/painel.js?v=6"></script>
+  <script src="/painel/painel.js?v=7"></script>
 </body>
 </html>

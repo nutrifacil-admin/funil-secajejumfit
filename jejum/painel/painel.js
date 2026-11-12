@@ -173,10 +173,34 @@
     requestAnimationFrame(quadro);
   }
 
+  /* Lembrar o acesso: o e-mail fica neste navegador e a senha vai para o gerenciador de senhas do próprio navegador
+     (Chrome/Safari pedem para salvar); na próxima vez os dois já aparecem preenchidos. */
+  function lerLembrado() { try { return localStorage.getItem("flowex_email") || ""; } catch (e) { return ""; } }
+  function lembrarLogin() {
+    var email = $("l-email").value.trim(), senha = $("l-senha").value;
+    if (!$("l-lembrar").checked) { esquecerLogin(); return; }
+    try { localStorage.setItem("flowex_email", email); } catch (e) {}
+    try { if (window.PasswordCredential && navigator.credentials) navigator.credentials.store(new PasswordCredential({ id: email, password: senha, name: email })).catch(function () {}); } catch (e) {}
+  }
+  function esquecerLogin() {
+    try { localStorage.removeItem("flowex_email"); } catch (e) {}
+    try { if (navigator.credentials && navigator.credentials.preventSilentAccess) navigator.credentials.preventSilentAccess(); } catch (e) {}
+  }
+  function preencherLogin() {
+    var email = lerLembrado();
+    if (email && !$("l-email").value) $("l-email").value = email;
+    try {
+      if (email && window.PasswordCredential && navigator.credentials) navigator.credentials.get({ password: true, mediation: "optional" }).then(function (c) {
+        if (c && c.password) { $("l-email").value = c.id; $("l-senha").value = c.password; $("l-botao").focus(); }
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
   function telaEntrada() {
     $("painel").hidden = true; $("entrada").hidden = false;
     iniciarGalaxia();
-    setTimeout(function () { $("l-email").focus(); }, 300);
+    preencherLogin();
+    setTimeout(function () { (lerLembrado() ? $("l-senha") : $("l-email")).focus(); }, 300);
   }
   $("form-login").addEventListener("submit", function (ev) {
     ev.preventDefault();
@@ -184,7 +208,7 @@
     erro.hidden = true; b.disabled = true; b.firstElementChild.textContent = "Verificando…";
     api("login", null, { email: $("l-email").value, senha: $("l-senha").value }).then(function (r) {
       b.disabled = false; b.firstElementChild.textContent = "Entrar no painel";
-      if (r.ok) { galaxia.ativa = false; if (CFG.salto === false) abrirPainel(); else dobra(r.nome, abrirPainel); return; }
+      if (r.ok) { galaxia.ativa = false; lembrarLogin(); dobra(r.nome, abrirPainel); return; }
       erro.textContent = r.erro || "Não conseguimos entrar agora. Tente de novo."; erro.hidden = false;
     });
   });
@@ -445,7 +469,14 @@
   var menu = $("u-menu");
   $("u-botao").addEventListener("click", function (e) { e.stopPropagation(); menu.hidden = !menu.hidden; this.setAttribute("aria-expanded", String(!menu.hidden)); });
   document.addEventListener("click", function () { menu.hidden = true; });
-  $("u-sair").addEventListener("click", function () { api("sair", null, {}).then(function () { clearInterval(S.timer); $("l-senha").value = ""; telaEntrada(); }); });
+  $("u-sair").addEventListener("click", function () { $("sair-lembrar").checked = !!lerLembrado(); $("d-sair").showModal(); });
+  $("sair-cancelar").addEventListener("click", function () { $("d-sair").close(); });
+  $("form-sair").addEventListener("submit", function (ev) {
+    ev.preventDefault(); $("d-sair").close();
+    var manter = $("sair-lembrar").checked;
+    if (!manter) { esquecerLogin(); }
+    api("sair", null, {}).then(function () { clearInterval(S.timer); location.hash = ""; if (!manter) { $("l-senha").value = ""; $("l-email").value = ""; } telaEntrada(); });
+  });
   $("u-senha").addEventListener("click", function () { $("s-msg").hidden = true; $("form-senha").reset(); $("d-senha").showModal(); });
   $("s-cancelar").addEventListener("click", function () { $("d-senha").close(); });
   $("form-senha").addEventListener("submit", function (ev) {
@@ -678,7 +709,7 @@
       fx.width = caixa.clientWidth * dpr; fx.height = caixa.clientHeight * dpr; fxc.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     function talvezNave() {
-      if (calmo || caixa.hidden || CFG.nave === false) return;
+      if (calmo || caixa.hidden) return;
       var hoje = S.hoje, ja = null; try { ja = localStorage.getItem("flowex_nave"); } catch (e) {}
       if (ja === hoje) return;
       try { localStorage.setItem("flowex_nave", hoje); } catch (e) {}
@@ -857,10 +888,10 @@
               '<span class="produto-seta" aria-hidden="true">⌄</span></button>' +
             '<div class="modulos">' + MODULOS.map(function (m) {
               return '<a class="modulo" href="#/p/' + id + "/" + m.id + '"><span class="modulo-ic"><svg viewBox="0 0 24 24" aria-hidden="true">' + m.ic + "</svg></span><strong>" + m.nome + "</strong><small>" + m.desc + '</small><span class="modulo-info" id="mi-' + id + "-" + m.id + '"></span></a>';
-            }).join("") + EM_BREVE.map(function (e) { return '<div class="modulo em-breve"><span class="modulo-ic">＋</span><strong>' + e[0] + "</strong><small>" + e[1] + "</small><span class=\"modulo-info\">em breve</span></div>"; }).join("") +
+            }).join("") +
             "</div></article>";
         }).join("") +
-        '<article class="produto novo"><div class="produto-cab"><span class="sigla">+</span><span class="produto-nome"><strong>Novo produto</strong><small>Mande os dados do produto e cadastramos aqui, igual ao Seca Jejum.</small></span></div></article>' +
+        '<article class="produto novo"><div class="produto-cab"><span class="sigla">+</span><span class="produto-nome"><strong>Novo produto</strong></span><span class="selo-breve">Disponível em breve</span></div></article>' +
         "</div>";
       el.querySelectorAll(".produto[data-id] .produto-cab").forEach(function (b) {
         b.addEventListener("click", function () {
@@ -984,7 +1015,7 @@
   var criativos = (function () {
     var lista = [], prod = null, modo = "esteira", busca = "", filtro = "";
     var ST = [
-      ["ideia", "Ideia"], ["producao", "Produção"], ["teste", "Em teste"], ["aprovado", "Aprovado"], ["escala", "Escalando"], ["pausado", "Pausado"], ["reprovado", "Reprovado"]
+      ["ideia", "Planejado"], ["producao", "Em produção"], ["teste", "Em teste"], ["aprovado", "Aprovado"], ["escala", "Em escala"], ["pausado", "Pausado"], ["reprovado", "Reprovado"]
     ];
     var NOME_ST = {}; ST.forEach(function (x) { NOME_ST[x[0]] = x[1]; });
     var FORMATOS = ["Vídeo", "UGC", "Imagem", "Carrossel", "Estático com texto"];
@@ -1006,7 +1037,7 @@
       var cpas = lista.map(function (c) { var t = totais(c); return t.vendas ? { c: c, v: t.gasto / t.vendas } : null; }).filter(Boolean).sort(function (a, b) { return a.v - b.v; });
       var testados = lista.filter(function (c) { return (c.metricas || []).length || ["teste", "aprovado", "escala", "pausado", "reprovado"].indexOf(c.status) >= 0; }).length;
       var k = [
-        ["Ativos agora", fmt(ativos.length), "em teste, aprovados ou escalando", true],
+        ["Ativos agora", fmt(ativos.length), "em teste, aprovados ou em escala", true],
         ["Já testados", fmt(testados), fmt(lista.length) + " cadastrados no total"],
         ["Taxa de aprovação", pctTxt(pct(aprov.length, decididos.length)), fmt(aprov.length) + " de " + fmt(decididos.length) + " decididos"],
         ["Investido", din(gasto), fmt(vend) + " vendas registradas"],
@@ -1088,7 +1119,7 @@
       }).join("");
       f.innerHTML = '<h3>' + (id ? "Editar criativo" : "Novo criativo") + "</h3>" +
         '<div class="cr-form"><label class="cr-img" id="cr-solta"><input type="file" accept="image/*" id="cr-arquivo" hidden>' +
-          (c.temImagem ? '<img src="' + img(c) + '" alt="" id="cr-prev">' : '<span id="cr-prev-txt">Solte a imagem aqui, cole (Cmd+V) ou clique para escolher</span><img alt="" id="cr-prev" hidden>') + "</label>" +
+          (c.temImagem ? '<img src="' + img(c) + '" alt="" id="cr-prev">' : '<span id="cr-prev-txt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5M7.5 9.5 12 5l4.5 4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Adicionar imagem</span><img alt="" id="cr-prev" hidden>') + "</label>" +
         '<div class="cr-campos">' +
           '<label class="cheio">Nome do criativo<input id="c-nome" required maxlength="120" value="' + esc(c.nome) + '" placeholder="Ex.: CJ-12 · Alerta jejum com água"></label>' +
           '<label>Data de criação<input type="date" id="c-data" value="' + esc(c.data || S.hoje) + '"></label>' +
@@ -1153,10 +1184,12 @@
         '<section class="bloco cfg">' +
           opc(["Tema", "Escuro, claro ou seguindo o sistema do computador"], "tema", [["escuro", "Escuro"], ["claro", "Claro"], ["auto", "Automático"]], CFG.tema || "escuro") +
           opc(["Período ao abrir", "Qual período os gerenciadores mostram primeiro"], "periodo", [["hoje", "Hoje"], ["ontem", "Ontem"], ["7", "7 dias"], ["30", "30 dias"], ["mes", "Este mês"]], CFG.periodo || "hoje") +
-          opc(["Salto ao entrar", "A viagem pela galáxia depois do login"], "salto", [[true, "Ligado"], [false, "Desligado"]], CFG.salto !== false) +
-          opc(["Nave do Flow", "A nave que percorre o fluxo uma vez por dia"], "nave", [[true, "Ligada"], [false, "Desligada"]], CFG.nave !== false) +
         "</section>" +
-        '<section class="bloco cfg"><div class="cfg-linha"><div><strong>Conta</strong><small>' + esc(S.eu.nome) + " · " + esc(S.eu.email) + '</small></div><div class="cfg-acoes"><button type="button" class="sec" id="cfg-senha">Trocar senha</button><button type="button" class="sec" id="cfg-sair">Sair</button></div></div></section>';
+        '<section class="bloco cfg"><div class="cfg-linha"><div><strong>Membros da conta</strong><small>Quem tem acesso ao Flowex</small></div></div>' +
+          (S.eu.membros || []).map(function (m) {
+            return '<div class="cfg-linha membro"><div class="membro-id"><span class="avatar">' + esc(m.nome.charAt(0)) + "</span><div><strong>" + esc(m.nome) + (m.email === S.eu.email ? ' <em class="voce">você</em>' : "") + "</strong><small>" + esc(m.email) + '</small></div></div><span class="papel">' + esc(m.papel) + "</span></div>";
+          }).join("") + "</section>" +
+        '<section class="bloco cfg"><div class="cfg-linha"><div><strong>Minha conta</strong><small>' + esc(S.eu.nome) + " · " + esc(S.eu.email) + '</small></div><div class="cfg-acoes"><button type="button" class="sec" id="cfg-senha">Trocar senha</button><button type="button" class="sec" id="cfg-sair">Sair</button></div></div></section>';
       el.querySelectorAll("[data-cfg]").forEach(function (g) {
         g.querySelectorAll("button").forEach(function (b) {
           b.addEventListener("click", function () {

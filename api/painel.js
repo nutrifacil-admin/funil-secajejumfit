@@ -7,9 +7,9 @@ const { segredo, pipeline, hojeBR, cmd, json, corpo } = require("./_lib");
 // Quem entra no painel. A senha inicial é a mesma para todos (guardada só como hash);
 // cada um pode trocar a sua dentro do painel (a nova fica no banco e passa a valer no lugar da inicial).
 const USUARIOS = {
-  "asmcholding@gmail.com": { nome: "Attila" },
-  "wanderverdigital@gmail.com": { nome: "Gleidson" },
-  "portalsistemas4@gmail.com": { nome: "Murillo" }
+  "asmcholding@gmail.com": { nome: "Attila", papel: "Administrador" },
+  "wanderverdigital@gmail.com": { nome: "Gleidson", papel: "Sócio" },
+  "portalsistemas4@gmail.com": { nome: "Murillo", papel: "Sócio" }
 };
 const SENHA_INICIAL = "9e126aaec183217919ae366dd0896afa:4251fbc9f9c7f3d1d75b66cd11c91826ecf965022b08448041d18134940d99a1";
 const FUNIS = { jejum: "Seca Jejum" };
@@ -93,7 +93,8 @@ module.exports = async (req, res) => {
   const email = await quem(req);
   if (!email) return json(res, 401, { ok: false, erro: "login" });
 
-  if (acao === "eu") return json(res, 200, { ok: true, nome: USUARIOS[email].nome, email, funis: FUNIS, produtos: PRODUTOS, hoje: hojeBR() });
+  if (acao === "eu") return json(res, 200, { ok: true, nome: USUARIOS[email].nome, email, funis: FUNIS, produtos: PRODUTOS, hoje: hojeBR(),
+    membros: Object.entries(USUARIOS).map(([e, u]) => ({ nome: u.nome, email: e, papel: u.papel })) });
 
   /* ---------- Criativos (preenchidos à mão pela equipe; ficam no histórico) ---------- */
   if (acao === "criativos" || acao === "criativo" || acao === "cr-excluir" || acao === "cr-img") {

@@ -499,3 +499,18 @@ a.modulo:hover { transform: translateY(-2px); border-color: var(--acento); box-s
 :root[data-tema="claro"] .dialogo { background: #fff; }
 :root[data-tema="claro"] .menu button:hover, :root[data-tema="claro"] .menu .menu-link:hover, :root[data-tema="claro"] .linha:not(.cab):hover { background: rgba(15,23,42,.04); }
 :root[data-tema="claro"] .datas input { color-scheme: light; }
+
+/* Login: lembrar; sair */
+.lembrar { flex-direction: row !important; align-items: center; gap: 9px !important; text-transform: none !important; letter-spacing: 0 !important; font: 13px "Inter" !important; color: var(--txt2) !important; cursor: pointer; }
+.lembrar input { width: 16px; height: 16px !important; accent-color: #7dd3fc; margin: 0; padding: 0 !important; }
+.dialogo .lembrar { margin: 4px 0 14px; }
+/* Novo produto */
+.selo-breve { margin-left: auto; font: 600 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; padding: 5px 10px; border-radius: 99px; color: var(--txt2); border: 1px solid var(--borda2); background: var(--sup2); }
+/* Imagem do criativo */
+#cr-prev-txt { display: flex; flex-direction: column; align-items: center; gap: 8px; font-weight: 500; color: var(--txt2); }
+#cr-prev-txt svg { width: 26px; height: 26px; color: var(--txt3); }
+/* Membros */
+.membro-id { display: flex; align-items: center; gap: 12px; }
+.membro .avatar { width: 36px; height: 36px; font-size: 14px; }
+.voce { font-style: normal; font: 600 10px var(--mono); text-transform: uppercase; letter-spacing: .06em; padding: 2px 6px; border-radius: 5px; color: #04101f; background: linear-gradient(90deg, #7dd3fc, #a78bfa); margin-left: 4px; vertical-align: 2px; }
+.papel { font: 500 12px var(--mono); color: var(--txt2); padding: 4px 10px; border-radius: 8px; border: 1px solid var(--borda2); }
