@@ -366,104 +366,179 @@
     });
   });
 
-    /* ===================== Visão Flow (telas num campo, ligadas por setas) ===================== */
+  /* ===================== Visão Flow =====================
+     As telas num campo, ligadas por setas. A espessura da ligação e as partículas que correm por ela mostram
+     quantas pessoas passam; o número no meio da seta é quanto caiu. Mapa, tela cheia, gargalo e a nave do dia. */
   var flow = (function () {
     var caixa = $("flow"), mundo = $("flow-mundo"), lig = $("flow-ligacoes"), nosEl = $("flow-nos");
-    var vista = { x: 40, y: 40, k: 0.8 }, pos = {}, carregadoDe = null, salvarT = null, primeiraVez = true;
-    var LARG = 236, PASSO_X = 300;
+    var fx = $("flow-fx"), fxc = fx.getContext("2d"), mapa = $("flow-mapa"), mapc = mapa.getContext("2d"), hud = $("flow-hud");
+    var vista = { x: 40, y: 40, k: 0.8 }, pos = {}, carregadoDe = null, salvarT = null, primeiraVez = true, focado = null;
+    var LARG = 236, PASSO_X = 300, calmo = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var pulsos = true; try { pulsos = localStorage.getItem("flowex_pulsos") !== "0"; } catch (e) {}
+    $("fl-pulsos").classList.toggle("ligado", pulsos);
 
-    function aplicar() { mundo.style.transform = "translate(" + vista.x + "px," + vista.y + "px) scale(" + vista.k + ")"; }
-    function padrao(passos) {
-      var p = {};
-      passos.forEach(function (x, i) { p[x.id] = [i * PASSO_X, 0]; });     // uma linha só: 1 → 2 → 3 …
-      return p;
-    }
+    function aplicar() { mundo.style.transform = "translate(" + vista.x + "px," + vista.y + "px) scale(" + vista.k + ")"; desenharMapa(); }
+    function padrao(passos) { var p = {}; passos.forEach(function (x, i) { p[x.id] = [i * PASSO_X, 0]; }); return p; }
     function chave() { return S.f + ":" + S.g; }
     function carregarLayout(cb) {
       if (carregadoDe === chave()) return cb();
-      api("layout", { f: S.f, g: S.g }).then(function (r) {
-        carregadoDe = chave(); pos = (r && r.pos) || {}; primeiraVez = true; cb();
-      });
+      api("layout", { f: S.f, g: S.g }).then(function (r) { carregadoDe = chave(); pos = (r && r.pos) || {}; primeiraVez = true; cb(); });
     }
-    function salvar() {
-      clearTimeout(salvarT);
-      salvarT = setTimeout(function () { api("layout", { f: S.f, g: S.g }, { pos: pos }); }, 600);
-    }
+    function salvar() { clearTimeout(salvarT); salvarT = setTimeout(function () { api("layout", { f: S.f, g: S.g }, { pos: pos }); }, 600); }
+    function elNo(id) { return nosEl.querySelector('.no[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]'); }
 
+    var ultimo = null;
     function desenhar() {
       if (!S.d) return;
       carregarLayout(function () {
-        var c = calcular(S.d), padr = padrao(c.passos);
+        var c = calcular(S.d), padr = padrao(c.passos); ultimo = c;
         c.passos.forEach(function (p) { if (!pos[p.id]) pos[p.id] = padr[p.id]; });
-        nosEl.innerHTML = c.linhas.map(function (l) {
+        nosEl.innerHTML = c.linhas.map(function (l, i) {
           var dt = difTxt(l), alta = c.maiores.indexOf(l.p.id) >= 0, xy = pos[l.p.id];
-          return '<div class="no' + (l.p.evento ? " evento" : "") + (alta ? " alta" : "") + '" data-id="' + esc(l.p.id) + '" style="left:' + xy[0] + "px;top:" + xy[1] + 'px;width:' + LARG + 'px">' +
+          // saúde da tela pela queda em relação à anterior: verde até 5%, amarelo até 12%, vermelho acima
+          var saude = l.queda == null || l.p.evento ? "" : l.queda > 0.12 ? " critica" : l.queda > 0.05 ? " atencao" : " boa";
+          return '<div class="no' + (l.p.evento ? " evento" : "") + (alta ? " alta" : "") + saude + '" data-id="' + esc(l.p.id) + '" data-i="' + i + '" style="left:' + xy[0] + "px;top:" + xy[1] + 'px;width:' + LARG + 'px">' +
             '<div class="no-dados"><span class="r">Retenção</span><span class="v">' + (c.base ? pctTxt(l.ret) : "—") + '</span>' +
             '<span class="r">Visualizações</span><span class="v">' + fmt(l.n) + "</span>" +
             '<span class="cmp ' + dt.cls + '">' + esc(dt.txt) + "</span></div>" +
-            '<div class="no-corpo"><div class="topo-no"><span class="num-no">' + (l.p.evento ? "ev" : esc(l.p.n)) + "</span><strong>" + esc(l.p.nome) + "</strong></div>" +
+            '<div class="no-corpo"><div class="topo-no"><span class="num-no">' + (l.p.evento ? "ev" : esc(l.p.n)) + "</span><strong>" + esc(l.p.nome) + "</strong>" +
+            (l.queda != null && !l.p.evento ? '<span class="selo-saude">' + (l.queda > 0.12 ? "▼ crítica" : l.queda > 0.05 ? "atenção" : "ok") + "</span>" : "") + "</div>" +
             "<p>" + esc(l.p.titulo) + "</p>" +
             '<div class="barra-no"><i style="width:' + Math.min(100, l.ret).toFixed(1) + '%"></i></div>' +
             '<a href="' + esc(l.p.editar) + '" target="_blank" rel="noopener">' + ICO_EDITAR + "Editar</a></div></div>";
         }).join("");
-        ligar(c);
-        if (primeiraVez) { primeiraVez = false; inicio(c.passos); }
+        ligar();
+        desenharHud(c);
+        if (focado) focar(focado, true);
+        if (primeiraVez) { primeiraVez = false; inicio(); setTimeout(talvezNave, 700); }
+        desenharMapa();
       });
     }
 
-    // Setas: cada tela liga na seguinte; no meio da seta, quanto caiu de uma para a outra
+    // Ligações: espessura pelo volume, partículas correndo (quanto mais gente, mais partículas), queda no meio
     function ancora(id, lado) {
-      var n = nosEl.querySelector('.no[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]');
-      if (!n) return null;
-      var x = n.offsetLeft, y = n.offsetTop, corpo = n.querySelector(".no-corpo");
-      var cy = y + corpo.offsetTop + corpo.offsetHeight / 2;
-      return lado === "saida" ? [x + n.offsetWidth, cy] : [x, cy];
+      var n = elNo(id); if (!n) return null;
+      var corpo = n.querySelector(".no-corpo"), cy = n.offsetTop + corpo.offsetTop + corpo.offsetHeight / 2;
+      return lado === "saida" ? [n.offsetLeft + n.offsetWidth, cy] : [n.offsetLeft, cy];
     }
-    var ultimo = null;
-    function ligar(c) {
-      c = c || ultimo; ultimo = c;
-      var html = '<defs><marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#4a5e8c"/></marker></defs>';
+    function curva(a, b) {
+      var dx = Math.max(60, Math.abs(b[0] - a[0]) * 0.45);
+      return "M" + a[0] + " " + a[1] + " C" + (a[0] + dx) + " " + a[1] + " " + (b[0] - dx) + " " + b[1] + " " + b[0] + " " + b[1];
+    }
+    function ligar() {
+      var c = ultimo; if (!c) return;
+      var html = '<defs><marker id="seta" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5b74ad"/></marker>' +
+        '<linearGradient id="fio" x1="0" x2="1"><stop offset="0" stop-color="#3d6fe0"/><stop offset="1" stop-color="#8b7bff"/></linearGradient></defs>';
+      var top = Math.max(1, c.base);
       for (var i = 1; i < c.linhas.length; i++) {
         var a = ancora(c.linhas[i - 1].p.id, "saida"), b = ancora(c.linhas[i].p.id, "entrada");
         if (!a || !b) continue;
-        var dx = Math.max(60, Math.abs(b[0] - a[0]) * 0.45);
-        var d = "M" + a[0] + " " + a[1] + " C" + (a[0] + dx) + " " + a[1] + " " + (b[0] - dx) + " " + b[1] + " " + b[0] + " " + b[1];
-        html += '<path class="' + (c.linhas[i].p.evento ? "evento" : "") + '" d="' + d + '" marker-end="url(#seta)"/>';
-        var q = c.linhas[i].queda;
+        var l = c.linhas[i], d = curva(a, b), larg = 1.5 + 5 * Math.min(1, l.n / top);
+        var marcado = focado != null && i <= focado;
+        html += '<path id="lg' + i + '" class="fio' + (l.p.evento ? " evento" : "") + (marcado ? " marcado" : "") + '" d="' + d + '" style="stroke-width:' + larg.toFixed(1) + '" marker-end="url(#seta)"/>';
+        if (pulsos && !calmo && l.n > 0) {
+          var qtd = Math.max(1, Math.min(5, Math.round(1 + 4 * l.n / top))), dur = (2.6 - 1.2 * Math.min(1, l.n / top)).toFixed(2);
+          for (var k = 0; k < qtd; k++) html += '<circle class="pulso-fio" r="' + (2 + larg * 0.35).toFixed(1) + '"><animateMotion dur="' + dur + 's" repeatCount="indefinite" begin="-' + (k * dur / qtd).toFixed(2) + 's"><mpath href="#lg' + i + '"/></animateMotion></circle>';
+        }
+        var q = l.queda;
         if (q != null && q > 0.0005) {
-          var mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, t = "−" + pctTxt(q * 100), w = t.length * 7 + 12;
-          html += '<g class="rotulo' + (c.maiores.indexOf(c.linhas[i].p.id) >= 0 ? " alta" : "") + '"><rect x="' + (mx - w / 2) + '" y="' + (my - 10) + '" width="' + w + '" height="20" rx="6"/><text x="' + mx + '" y="' + (my + 4) + '" text-anchor="middle">' + t + "</text></g>";
+          var mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, t = "−" + pctTxt(q * 100), w = t.length * 7.4 + 14;
+          html += '<g class="rotulo' + (c.maiores.indexOf(l.p.id) >= 0 ? " alta" : "") + '"><rect x="' + (mx - w / 2) + '" y="' + (my - 11) + '" width="' + w + '" height="22" rx="7"/><text x="' + mx + '" y="' + (my + 4) + '" text-anchor="middle">' + t + "</text></g>";
         }
       }
       lig.innerHTML = html;
     }
 
-    // Abre mostrando o começo do funil em tamanho de leitura
-    function inicio(passos) {
-      var p0 = pos[passos[0].id] || [0, 0], n0 = nosEl.querySelector(".no"), h = n0 ? n0.offsetHeight : 230;
-      vista.k = caixa.clientWidth < 700 ? 0.7 : 0.9;
-      vista.x = 40 - p0[0] * vista.k; vista.y = caixa.clientHeight / 2 - (p0[1] + h / 2) * vista.k;
-      aplicar();
+    // Barra de comando no topo: as conversões do funil e o maior gargalo, com atalho para ir até ele
+    function desenharHud(c) {
+      var v = S.d.passos, vd = S.d.vendas, h = [];
+      if (S.g === "front") {
+        h.push(["Entraram", fmt(c.base)], ["Chegaram à oferta", pctTxt(pct(v["34"] || 0, c.base))], ["Checkout", pctTxt(pct(v.checkout || 0, c.base))], ["Vendas", fmt(vd.front || 0) + " · " + pctTxt(pct(vd.front || 0, c.base))]);
+      } else {
+        h.push(["Compras front", fmt(vd.front || 0)], ["Entraram na área", fmt(v["login-ok"] || 0)], ["Viram a oferta", fmt(v.oferta || 0)], ["Upsell + downsell", fmt((vd.upsell || 0) + (vd.downsell || 0))]);
+      }
+      var pior = null; c.linhas.forEach(function (l, i) { if (!l.p.evento && l.queda != null && (!pior || l.queda > pior.l.queda)) pior = { l: l, i: i }; });
+      hud.innerHTML = h.map(function (x, i) { return (i ? '<span class="hud-seta">→</span>' : "") + '<span class="hud-item"><small>' + x[0] + "</small><b>" + x[1] + "</b></span>"; }).join("") +
+        (pior && pior.l.queda > 0 ? '<button type="button" class="hud-gargalo" data-i="' + pior.i + '"><span class="ponto-queda"></span>Maior gargalo: <b>' + esc(pior.l.p.n + " · " + pior.l.p.nome) + "</b> −" + pctTxt(pior.l.queda * 100) + "<em>ver</em></button>" : "");
+      var g = hud.querySelector(".hud-gargalo");
+      if (g) g.addEventListener("click", function () { irPara(Number(g.dataset.i)); });
+    }
+    function irPara(i, semFocar) {
+      var n = nosEl.querySelector('.no[data-i="' + i + '"]'); if (!n) return;
+      var alvo = { k: Math.max(vista.k, 0.85) };
+      alvo.x = caixa.clientWidth / 2 - (n.offsetLeft + n.offsetWidth / 2) * alvo.k; alvo.y = caixa.clientHeight / 2 - (n.offsetTop + n.offsetHeight / 2) * alvo.k;
+      animarVista(alvo, 650);
+      if (!semFocar) focar(i);
+      n.classList.remove("piscar"); void n.offsetWidth; n.classList.add("piscar");
+    }
+    // Clique numa tela: destaca o caminho do começo até ela
+    function focar(i, manter) {
+      focado = manter ? focado : (focado === i ? null : i);
+      nosEl.querySelectorAll(".no").forEach(function (n) { n.classList.toggle("apagado", focado != null && Number(n.dataset.i) > focado); n.classList.toggle("focado", Number(n.dataset.i) === focado); });
+      ligar();
+    }
+    function animarVista(alvo, ms, fim) {
+      var de = { x: vista.x, y: vista.y, k: vista.k }, t0 = performance.now();
+      (function passo(agora) {
+        var t = Math.min(1, (agora - t0) / ms), e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        vista.x = de.x + (alvo.x - de.x) * e; vista.y = de.y + (alvo.y - de.y) * e; vista.k = de.k + (alvo.k - de.k) * e; aplicar();
+        if (t < 1) requestAnimationFrame(passo); else if (fim) fim();
+      })(t0);
+    }
+
+    function alvoInicio() {
+      var n0 = nosEl.querySelector(".no"); if (!n0) return null;
+      var k = caixa.clientWidth < 700 ? 0.7 : 0.9;
+      return { k: k, x: 60 - n0.offsetLeft * k, y: caixa.clientHeight / 2 - (n0.offsetTop + n0.offsetHeight / 2) * k + 20 };
+    }
+    function inicio() { var a = alvoInicio(); if (!a) return; vista.x = a.x; vista.y = a.y; vista.k = a.k; aplicar(); }
+    function limites() {
+      var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+      nosEl.querySelectorAll(".no").forEach(function (n) { x0 = Math.min(x0, n.offsetLeft); y0 = Math.min(y0, n.offsetTop); x1 = Math.max(x1, n.offsetLeft + n.offsetWidth); y1 = Math.max(y1, n.offsetTop + n.offsetHeight); });
+      return x0 > x1 ? null : [x0, y0, x1, y1];
     }
     function ajustar() {
-      var nos = nosEl.querySelectorAll(".no"); if (!nos.length) return;
-      var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
-      nos.forEach(function (n) { x0 = Math.min(x0, n.offsetLeft); y0 = Math.min(y0, n.offsetTop); x1 = Math.max(x1, n.offsetLeft + n.offsetWidth); y1 = Math.max(y1, n.offsetTop + n.offsetHeight); });
-      var W = caixa.clientWidth, H = caixa.clientHeight, m = 40;
-      vista.k = Math.max(0.2, Math.min(1.1, Math.min((W - m * 2) / (x1 - x0), (H - m * 2) / (y1 - y0))));
-      vista.x = m - x0 * vista.k + ((W - m * 2) - (x1 - x0) * vista.k) / 2; vista.y = m - y0 * vista.k;
-      aplicar();
+      var L = limites(); if (!L) return;
+      var W = caixa.clientWidth, H = caixa.clientHeight, m = 60, k = Math.max(0.15, Math.min(1.1, Math.min((W - m * 2) / (L[2] - L[0]), (H - m * 2 - 60) / (L[3] - L[1]))));
+      animarVista({ k: k, x: m - L[0] * k + ((W - m * 2) - (L[2] - L[0]) * k) / 2, y: m + 40 - L[1] * k + ((H - m * 2 - 60) - (L[3] - L[1]) * k) / 2 }, 500);
     }
     function zoom(f, cx, cy) {
       var r = caixa.getBoundingClientRect(); cx = cx == null ? r.width / 2 : cx; cy = cy == null ? r.height / 2 : cy;
-      var k = Math.max(0.2, Math.min(2, vista.k * f));
+      var k = Math.max(0.15, Math.min(2, vista.k * f));
       vista.x = cx - (cx - vista.x) * (k / vista.k); vista.y = cy - (cy - vista.y) * (k / vista.k); vista.k = k; aplicar();
     }
 
-    // Arrastar: o fundo navega; a tela muda de lugar
+    // Mapa do fluxo (canto): todas as telas em miniatura e o pedaço que está na tela
+    var escalaMapa = null;
+    function desenharMapa() {
+      var L = limites(), w = mapa.width, h = mapa.height; mapc.clearRect(0, 0, w, h);
+      if (!L || caixa.hidden) return;
+      var pad = 8, k = Math.min((w - pad * 2) / (L[2] - L[0]), (h - pad * 2) / (L[3] - L[1]));
+      var ox = pad + ((w - pad * 2) - (L[2] - L[0]) * k) / 2 - L[0] * k, oy = pad + ((h - pad * 2) - (L[3] - L[1]) * k) / 2 - L[1] * k;
+      escalaMapa = { k: k, ox: ox, oy: oy };
+      nosEl.querySelectorAll(".no").forEach(function (n) {
+        mapc.fillStyle = n.classList.contains("critica") ? "#f87171" : n.classList.contains("evento") ? "#4a5674" : "#4f8cff";
+        mapc.fillRect(ox + n.offsetLeft * k, oy + n.offsetTop * k, Math.max(2, n.offsetWidth * k), Math.max(2, n.offsetHeight * k));
+      });
+      var vx = (-vista.x / vista.k), vy = (-vista.y / vista.k), vw = caixa.clientWidth / vista.k, vh = caixa.clientHeight / vista.k;
+      mapc.strokeStyle = "rgba(125,211,252,.9)"; mapc.lineWidth = 1.5; mapc.strokeRect(ox + vx * k, oy + vy * k, vw * k, vh * k);
+    }
+    function mapaIr(e) {
+      if (!escalaMapa) return;
+      var r = mapa.getBoundingClientRect(), mx = (e.clientX - r.left) * (mapa.width / r.width), my = (e.clientY - r.top) * (mapa.height / r.height);
+      var wx = (mx - escalaMapa.ox) / escalaMapa.k, wy = (my - escalaMapa.oy) / escalaMapa.k;
+      vista.x = caixa.clientWidth / 2 - wx * vista.k; vista.y = caixa.clientHeight / 2 - wy * vista.k; aplicar();
+    }
+    var arrMapa = false;
+    mapa.addEventListener("pointerdown", function (e) { e.stopPropagation(); arrMapa = true; mapa.setPointerCapture(e.pointerId); mapaIr(e); });
+    mapa.addEventListener("pointermove", function (e) { if (arrMapa) mapaIr(e); });
+    mapa.addEventListener("pointerup", function () { arrMapa = false; });
+
+    // Arrastar: o fundo navega; a tela muda de lugar; um clique (sem arrastar) numa tela destaca o caminho até ela
     var arr = null;
     caixa.addEventListener("pointerdown", function (e) {
-      if (e.target.closest("a, .flow-ferramentas")) return;
+      if (e.target.closest("a, button, .flow-ferramentas, .flow-mapa, .flow-hud")) return;
+      if (nave.ativa) nave.parar();
       var no = e.target.closest(".no");
       arr = { no: no, x: e.clientX, y: e.clientY, ox: no ? pos[no.dataset.id][0] : vista.x, oy: no ? pos[no.dataset.id][1] : vista.y, mexeu: false };
       if (no) no.classList.add("solto"); else caixa.classList.add("arrastando");
@@ -472,15 +547,16 @@
     caixa.addEventListener("pointermove", function (e) {
       if (!arr) return;
       var dx = e.clientX - arr.x, dy = e.clientY - arr.y;
-      if (Math.abs(dx) + Math.abs(dy) > 2) arr.mexeu = true;
+      if (Math.abs(dx) + Math.abs(dy) > 3) arr.mexeu = true;
+      if (!arr.mexeu) return;
       if (arr.no) {
         var id = arr.no.dataset.id, nx = Math.round(arr.ox + dx / vista.k), ny = Math.round(arr.oy + dy / vista.k);
-        pos[id] = [nx, ny]; arr.no.style.left = nx + "px"; arr.no.style.top = ny + "px"; ligar();
+        pos[id] = [nx, ny]; arr.no.style.left = nx + "px"; arr.no.style.top = ny + "px"; ligar(); desenharMapa();
       } else { vista.x = arr.ox + dx; vista.y = arr.oy + dy; aplicar(); }
     });
     function soltar() {
       if (!arr) return;
-      if (arr.no) { arr.no.classList.remove("solto"); if (arr.mexeu) salvar(); }
+      if (arr.no) { arr.no.classList.remove("solto"); if (arr.mexeu) salvar(); else focar(Number(arr.no.dataset.i)); }
       caixa.classList.remove("arrastando"); arr = null;
     }
     caixa.addEventListener("pointerup", soltar);
@@ -492,13 +568,126 @@
     $("fl-mais").addEventListener("click", function () { zoom(1.2); });
     $("fl-menos").addEventListener("click", function () { zoom(1 / 1.2); });
     $("fl-ajustar").addEventListener("click", ajustar);
-    $("fl-organizar").addEventListener("click", function () {
-      if (!confirmarOrganizar()) return;
-      pos = {}; api("layout", { f: S.f, g: S.g }, { pos: {}, limpar: true }); primeiraVez = true; desenhar();
+    $("fl-cheia").addEventListener("click", function () {
+      if (document.fullscreenElement) document.exitFullscreen(); else if (caixa.requestFullscreen) caixa.requestFullscreen();
     });
-    function confirmarOrganizar() { return window.confirm("Voltar todas as telas para a posição original? A organização atual será perdida para toda a equipe."); }
+    document.addEventListener("fullscreenchange", function () { setTimeout(function () { medirFx(); desenharMapa(); }, 80); });
+    $("fl-pulsos").addEventListener("click", function () {
+      pulsos = !pulsos; this.classList.toggle("ligado", pulsos); try { localStorage.setItem("flowex_pulsos", pulsos ? "1" : "0"); } catch (e) {} ligar();
+    });
+    $("fl-nave").addEventListener("click", function () { nave.voar(); });
+    $("fl-organizar").addEventListener("click", function () {
+      if (!window.confirm("Voltar todas as telas para a posição original? A organização atual será perdida para toda a equipe.")) return;
+      pos = {}; focado = null; api("layout", { f: S.f, g: S.g }, { pos: {}, limpar: true }); primeiraVez = true; desenhar();
+    });
+    window.addEventListener("resize", function () { if (!caixa.hidden) { medirFx(); desenharMapa(); } });
 
-    return { desenhar: desenhar, trocou: function () { carregadoDe = null; } };
+    /* ---------- A nave do Flowex: 1 vez por dia percorre o fluxo inteiro e some na última tela ---------- */
+    function medirFx() {
+      var dpr = Math.min(2, window.devicePixelRatio || 1);
+      fx.width = caixa.clientWidth * dpr; fx.height = caixa.clientHeight * dpr; fxc.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    function talvezNave() {
+      if (calmo || caixa.hidden) return;
+      var hoje = S.hoje, ja = null; try { ja = localStorage.getItem("flowex_nave"); } catch (e) {}
+      if (ja === hoje) return;
+      try { localStorage.setItem("flowex_nave", hoje); } catch (e) {}
+      nave.voar();
+    }
+    var nave = (function () {
+      var api_ = { ativa: false }, rota = null, total = 0, t0 = 0, dur = 0, rastro = [], cauda = [], raf = 0;
+      function montarRota() {
+        var c = ultimo; if (!c || c.linhas.length < 2) return false;
+        var d = "", ini = ancora(c.linhas[0].p.id, "entrada"), s0 = ancora(c.linhas[0].p.id, "saida");
+        if (!ini) return false;
+        d += "M" + (ini[0] - 160) + " " + (ini[1] - 40) + " Q" + (ini[0] - 40) + " " + ini[1] + " " + ini[0] + " " + ini[1] + " L" + s0[0] + " " + s0[1];
+        for (var i = 1; i < c.linhas.length; i++) {
+          var a = ancora(c.linhas[i - 1].p.id, "saida"), b = ancora(c.linhas[i].p.id, "entrada"), s = ancora(c.linhas[i].p.id, "saida");
+          if (!a || !b) continue;
+          var dx = Math.max(60, Math.abs(b[0] - a[0]) * 0.45);
+          d += " C" + (a[0] + dx) + " " + a[1] + " " + (b[0] - dx) + " " + b[1] + " " + b[0] + " " + b[1];
+          if (i < c.linhas.length - 1) d += " L" + s[0] + " " + s[1];
+          else d += " L" + (b[0] + LARG / 2) + " " + b[1];          // termina no meio da última tela
+        }
+        rota = document.createElementNS("http://www.w3.org/2000/svg", "path"); rota.setAttribute("d", d);
+        rota.setAttribute("fill", "none"); rota.setAttribute("stroke", "none"); lig.appendChild(rota);
+        total = rota.getTotalLength();
+        return total > 0;
+      }
+      function tela(p) { return [vista.x + p.x * vista.k, vista.y + p.y * vista.k]; }
+      function quadro(agora) {
+        var t = Math.min(1, (agora - t0) / dur), e = t < 0.12 ? (t * t) / 0.24 : t - 0.06;   // arranque suave, depois velocidade de cruzeiro
+        var dist = Math.min(total, e / 0.94 * total), p = rota.getPointAtLength(dist), q = rota.getPointAtLength(Math.min(total, dist + 6));
+        var ang = Math.atan2(q.y - p.y, q.x - p.x);
+        // câmera acompanha a nave
+        var kAlvo = caixa.clientWidth < 700 ? 0.55 : 0.7;
+        vista.k += (kAlvo - vista.k) * 0.06;
+        var ax = caixa.clientWidth * 0.42 - p.x * vista.k, ay = caixa.clientHeight * 0.5 - p.y * vista.k;
+        vista.x += (ax - vista.x) * 0.12; vista.y += (ay - vista.y) * 0.12; aplicar();
+        // rastro turbo (partículas que saem do motor)
+        var s = tela(p), tras = [s[0] - Math.cos(ang) * 16, s[1] - Math.sin(ang) * 16];
+        if (t < 1) for (var k = 0; k < 4; k++) rastro.push({ wx: p.x - Math.cos(ang) * 16 / vista.k, wy: p.y - Math.sin(ang) * 16 / vista.k,
+          vx: -Math.cos(ang) * (1 + Math.random() * 2) + (Math.random() - 0.5) * 1.2, vy: -Math.sin(ang) * (1 + Math.random() * 2) + (Math.random() - 0.5) * 1.2, vida: 1, cor: Math.random() < 0.5 ? "125,211,252" : "167,139,250" });
+        fxc.clearRect(0, 0, caixa.clientWidth, caixa.clientHeight);
+        fxc.globalCompositeOperation = "lighter";
+        // cauda de luz (o caminho recente da nave)
+        if (t < 1) cauda.push([p.x, p.y]); if (cauda.length > 34 || (t >= 1 && cauda.length)) cauda.shift();
+        for (var c2 = 1; c2 < cauda.length; c2++) {
+          var a1 = tela({ x: cauda[c2 - 1][0], y: cauda[c2 - 1][1] }), a2 = tela({ x: cauda[c2][0], y: cauda[c2][1] }), f = c2 / cauda.length;
+          fxc.strokeStyle = "rgba(" + (f > 0.5 ? "125,211,252" : "167,139,250") + "," + (f * 0.75) + ")"; fxc.lineWidth = 1 + f * 7; fxc.lineCap = "round";
+          fxc.beginPath(); fxc.moveTo(a1[0], a1[1]); fxc.lineTo(a2[0], a2[1]); fxc.stroke();
+        }
+        for (var i = rastro.length - 1; i >= 0; i--) {
+          var r = rastro[i]; r.vida -= 0.035; if (r.vida <= 0) { rastro.splice(i, 1); continue; }
+          r.wx += r.vx / vista.k; r.wy += r.vy / vista.k;
+          var rp = tela({ x: r.wx, y: r.wy });
+          fxc.fillStyle = "rgba(" + r.cor + "," + (r.vida * 0.85) + ")"; fxc.beginPath(); fxc.arc(rp[0], rp[1], 1 + r.vida * 3.2, 0, 6.283); fxc.fill();
+        }
+        // chama do motor
+        var fim = Math.max(0, (t - 0.94) / 0.06), alfa = 1 - fim;
+        var g = fxc.createRadialGradient(tras[0], tras[1], 0, tras[0], tras[1], 26);
+        g.addColorStop(0, "rgba(200,235,255," + 0.9 * alfa + ")"); g.addColorStop(0.4, "rgba(125,211,252," + 0.45 * alfa + ")"); g.addColorStop(1, "rgba(125,211,252,0)");
+        fxc.fillStyle = g; fxc.beginPath(); fxc.arc(tras[0], tras[1], 26, 0, 6.283); fxc.fill();
+        fxc.globalCompositeOperation = "source-over";
+        // a nave (marca Flowex: ponta em flecha, asas com gradiente azul → lilás)
+        fxc.save(); fxc.translate(s[0], s[1]); fxc.rotate(ang); fxc.globalAlpha = alfa; var esc_ = (1 - fim * 0.6) * 1.45; fxc.scale(esc_, esc_);
+        var gr = fxc.createLinearGradient(-18, 0, 20, 0); gr.addColorStop(0, "#a78bfa"); gr.addColorStop(1, "#7dd3fc");
+        fxc.shadowColor = "rgba(125,211,252,.9)"; fxc.shadowBlur = 18;
+        fxc.fillStyle = gr; fxc.beginPath(); fxc.moveTo(22, 0); fxc.lineTo(-12, -13); fxc.lineTo(-6, 0); fxc.lineTo(-12, 13); fxc.closePath(); fxc.fill();
+        fxc.shadowBlur = 0; fxc.fillStyle = "#e6f6ff"; fxc.beginPath(); fxc.ellipse(6, 0, 5, 2.6, 0, 0, 6.283); fxc.fill();
+        fxc.fillStyle = "rgba(4,16,31,.6)"; fxc.beginPath(); fxc.moveTo(-6, 0); fxc.lineTo(-11, -9); fxc.lineTo(-9, 0); fxc.lineTo(-11, 9); fxc.closePath(); fxc.fill();
+        fxc.restore();
+        // telas acendem quando a nave passa
+        nosEl.querySelectorAll(".no").forEach(function (n) {
+          var cx = n.offsetLeft + n.offsetWidth / 2, cy = n.offsetTop + n.offsetHeight / 2;
+          if (!n.dataset.aceso && Math.abs(p.x - cx) < n.offsetWidth / 2 && Math.abs(p.y - cy) < n.offsetHeight) { n.dataset.aceso = "1"; n.classList.add("acesa"); setTimeout(function () { n.classList.remove("acesa"); delete n.dataset.aceso; }, 900); }
+        });
+        if (t < 1 || rastro.length || cauda.length) { raf = requestAnimationFrame(quadro); return; }
+        terminar();
+      }
+      function terminar() {
+        var estava = api_.ativa;
+        api_.ativa = false; cancelAnimationFrame(raf); fxc.clearRect(0, 0, caixa.clientWidth, caixa.clientHeight); rastro = []; cauda = [];
+        if (rota) { rota.remove(); rota = null; }
+        // ao chegar na última tela, ela dá um brilho
+        var ultimoNo = nosEl.querySelector(".no:last-child"); if (ultimoNo) { ultimoNo.classList.remove("chegada"); void ultimoNo.offsetWidth; ultimoNo.classList.add("chegada"); }
+        caixa.classList.remove("em-voo");
+        if (estava && !parado) setTimeout(function () { var a = alvoInicio(); if (a) animarVista(a, 1400); }, 1100);   // depois do voo, volta ao começo do fluxo
+        parado = false;
+      }
+      var parado = false;
+      api_.voar = function () {
+        if (api_.ativa || caixa.hidden) return;
+        medirFx(); if (!montarRota()) return;
+        api_.ativa = true; caixa.classList.add("em-voo"); rastro = []; cauda = [];
+        dur = Math.min(11000, Math.max(5000, total / 1.9)); t0 = performance.now();
+        raf = requestAnimationFrame(quadro);
+      };
+      api_.parar = function () { parado = true; terminar(); };
+      return api_;
+    })();
+
+    return { desenhar: desenhar, mapa: desenharMapa, medir: medirFx };
   })();
 
   // Lista | Flow
@@ -511,7 +700,7 @@
   function mostrarVisao() {
     document.querySelectorAll(".visao button").forEach(function (b) { b.classList.toggle("ativo", b.dataset.v === S.visao); });
     $("tabela").hidden = S.visao === "flow"; $("flow").hidden = S.visao !== "flow";
-    if (S.visao === "flow") flow.desenhar();
+    if (S.visao === "flow") { flow.medir(); flow.desenhar(); }
   }
   try { S.visao = localStorage.getItem("flowex_visao") === "flow" ? "flow" : "lista"; } catch (e) {}
   mostrarVisao();

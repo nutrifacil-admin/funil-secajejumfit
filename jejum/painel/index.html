@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/painel/painel.css?v=3">
+  <link rel="stylesheet" href="/painel/painel.css?v=4">
 </head>
 <body>
   <!-- Entrada: galáxia de dados -->
@@ -69,19 +69,25 @@
         <h2 id="t-titulo">Retenção por tela</h2>
         <div class="visao" role="group" aria-label="Visualização">
           <button type="button" data-v="lista" class="ativo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Lista</button>
-          <button type="button" data-v="flow"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="8" width="6" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="15.5" y="8" width="6" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.6"/></svg>Flow</button>
+          <button type="button" data-v="flow"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="8" width="6" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="15.5" y="8" width="6" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.6"/></svg><span>Flow</span><em>novo</em></button>
         </div>
         <p class="legenda"><span class="ponto-queda"></span>maiores quedas · retenção = quantos dos que entraram na 1ª tela chegaram até ali</p>
       </div>
       <div id="flow" class="flow" hidden>
         <div class="flow-mundo" id="flow-mundo"><svg class="flow-ligacoes" id="flow-ligacoes"></svg><div id="flow-nos"></div></div>
+        <canvas class="flow-fx" id="flow-fx" aria-hidden="true"></canvas>
+        <div class="flow-hud" id="flow-hud"></div>
+        <canvas class="flow-mapa" id="flow-mapa" width="220" height="110" title="Mapa do fluxo: clique para ir até a parte"></canvas>
         <div class="flow-ferramentas">
           <button type="button" id="fl-mais" title="Aproximar">+</button>
           <button type="button" id="fl-menos" title="Afastar">−</button>
-          <button type="button" id="fl-ajustar" title="Ver tudo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
-          <button type="button" id="fl-organizar" title="Reorganizar as telas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h6v6H4zM14 5h6v6h-6zM4 15h6v4H4zM14 15h6v4h-6z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+          <button type="button" id="fl-ajustar" title="Ver o fluxo inteiro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+          <button type="button" id="fl-cheia" title="Tela cheia"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+          <button type="button" id="fl-pulsos" title="Ligar/desligar o fluxo animado" class="ligado"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-5 4 10 2-5h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button type="button" id="fl-nave" title="Mandar a nave percorrer o fluxo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12L5 5l3 7-3 7z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>
+          <button type="button" id="fl-organizar" title="Voltar as telas para a posição original"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h6v6H4zM14 5h6v6h-6zM4 15h6v4H4zM14 15h6v4h-6z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
         </div>
-        <p class="flow-dica">Arraste as telas para organizar · arraste o fundo para navegar · roda do mouse para zoom</p>
+        <p class="flow-dica">Arraste as telas · arraste o fundo para navegar · roda do mouse = zoom · clique numa tela para ver o caminho até ela</p>
       </div>
       <div class="tabela" id="tabela" role="table" aria-label="Retenção por tela">
         <div class="linha cab" role="row"><span>#</span><span>Tela</span><span>Retenção</span><span class="num">Visualizações</span><span class="num">%</span><span class="num">Queda</span><span></span></div>
@@ -110,6 +116,6 @@
   </dialog>
 
   <script src="/painel/mapa.js?v=2"></script>
-  <script src="/painel/painel.js?v=3"></script>
+  <script src="/painel/painel.js?v=4"></script>
 </body>
 </html>
