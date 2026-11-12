@@ -43,6 +43,10 @@ module.exports = async (req, res) => {
         const sufixo = LIBERA.includes(evento) ? "" : "-reembolso";
         const cmds = [["HINCRBY", chave, tipo + sufixo, 1]];
         if (valor) cmds.push(["HINCRBY", chave, tipo + sufixo + "-centavos", Math.round(valor * 100)]);
+        // por hora (Brasília): comparativo "ontem até esta hora" no Flowex
+        const hora = new Intl.DateTimeFormat("en-GB", { timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false }).format(new Date()).padStart(2, "0");
+        cmds.push(["HINCRBY", chave + ":h", hora + "|" + tipo + sufixo, 1]);
+        if (valor) cmds.push(["HINCRBY", chave + ":h", hora + "|" + tipo + sufixo + "-centavos", Math.round(valor * 100)]);
         await pipeline(cmds);
       }
     } catch (e) { /* o painel nunca atrapalha a liberação */ }

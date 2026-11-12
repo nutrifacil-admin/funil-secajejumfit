@@ -5,6 +5,7 @@
 const { pipeline, hojeBR, corpo } = require("./_lib");
 
 const FUNIS = ["jejum"], GRUPOS = ["front", "pos", "vsl"];
+const horaBR = () => new Intl.DateTimeFormat("en-GB", { timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false }).format(new Date()).padStart(2, "0");
 const limpa = (s, max) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, max);
 
 module.exports = async (req, res) => {
@@ -22,6 +23,9 @@ module.exports = async (req, res) => {
         cmds.push(["HINCRBY", base, p, 1]);
         if (camp) cmds.push(["HINCRBY", base + ":camp", camp + "|" + p, 1]);
       });
+      // por hora (Brasília), só os passos usados no comparativo "ontem até esta hora" do Flowex
+      const hora = horaBR();
+      lista.forEach((p) => { if (g === "front" && (p === "01" || p === "checkout")) cmds.push(["HINCRBY", base + ":h", hora + "|" + p, 1]); });
       cmds.push(["SET", "an:" + f + ":ultimo-ev", String(Date.now())]);   // Diagnóstico do Flowex: hora do último registro
       await pipeline(cmds);
     }
