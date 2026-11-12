@@ -1,0 +1,129 @@
+/* Página de obrigado (/membros/obrigado) — tema escuro da área de membros, sem fotos. */
+
+.obrigado-pagina { overflow-x: hidden; }
+
+/* Fundo: dois brilhos (verde da marca e amarelo do upsell) + grade de pontinhos discreta */
+.obrigado-fundo { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.obrigado-fundo::before {
+  content: ""; position: absolute; inset: -20%;
+  background:
+    radial-gradient(40% 35% at 50% 18%, rgba(25,179,141,.28), transparent 70%),
+    radial-gradient(30% 30% at 85% 75%, rgba(242,179,33,.10), transparent 70%),
+    radial-gradient(30% 30% at 10% 85%, rgba(14,122,98,.16), transparent 70%);
+  animation: respirar 9s ease-in-out infinite alternate;
+}
+.obrigado-fundo::after {
+  content: ""; position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(70% 60% at 50% 30%, #000, transparent);
+          mask-image: radial-gradient(70% 60% at 50% 30%, #000, transparent);
+}
+@keyframes respirar { to { transform: scale(1.08) translateY(2%); } }
+
+.obrigado {
+  position: relative; z-index: 1;
+  max-width: 640px; margin: 0 auto; padding: 28px 16px 40px;
+  display: flex; flex-direction: column; align-items: center; gap: 22px; text-align: center;
+}
+
+/* Aviso de compra aprovada (estrutura da referência) */
+.obrigado-alerta {
+  width: 100%; display: flex; align-items: center; gap: 14px; text-align: left;
+  padding: 16px 18px; border-radius: 14px;
+  background: rgba(14,122,98,.16); border: 1px solid rgba(25,179,141,.45);
+  animation: descer .5s ease both;
+}
+.obrigado-alerta svg { flex: none; width: 28px; height: 28px; color: #2fd3a6; }
+.obrigado-alerta strong { display: block; color: #8fe0c6; font-size: 1.02rem; }
+.obrigado-alerta span { color: #b5cfc7; font-size: .93rem; }
+@keyframes descer { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+
+.obrigado-logo { height: 30px; width: auto; margin-top: 6px; }
+
+/* Selo animado: círculo verde com o "check" sendo desenhado e órbitas girando */
+.selo { position: relative; width: 150px; height: 150px; display: grid; place-items: center; margin: 4px 0; }
+.selo-orbita {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px dashed rgba(25,179,141,.45);
+  animation: girar-lento 18s linear infinite;
+}
+.selo-orbita::before {                              /* "satélite" amarelo na órbita */
+  content: ""; position: absolute; top: -5px; left: 50%; width: 10px; height: 10px; margin-left: -5px;
+  border-radius: 50%; background: var(--amarelo); box-shadow: 0 0 12px var(--amarelo);
+}
+.selo-orbita-2 { inset: 16px; border-style: solid; border-color: rgba(255,255,255,.08); animation-duration: 11s; animation-direction: reverse; }
+.selo-orbita-2::before { background: #19b38d; box-shadow: 0 0 12px #19b38d; width: 8px; height: 8px; margin-left: -4px; top: -4px; }
+@keyframes girar-lento { to { transform: rotate(360deg); } }
+.selo-circulo {
+  width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center;
+  background: linear-gradient(160deg, #1fc196, #0e7a62);
+  box-shadow: 0 0 0 10px rgba(25,179,141,.12), 0 12px 40px rgba(18,160,127,.5);
+  animation: surgir .6s cubic-bezier(.2,1.4,.4,1) .2s both;
+}
+.selo-circulo svg { width: 52px; height: 52px; }
+.selo-check {
+  fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 40; stroke-dashoffset: 40; animation: desenhar .5s ease .7s forwards;
+}
+@keyframes surgir { from { transform: scale(.3); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes desenhar { to { stroke-dashoffset: 0; } }
+
+.obrigado h1 { font-size: clamp(1.55rem, 6.4vw, 2.2rem); line-height: 1.2; font-weight: 800; max-width: 560px; }
+.obrigado h1 mark {
+  background: none; color: #2fd3a6;
+  background-image: linear-gradient(transparent 62%, rgba(25,179,141,.28) 62%);
+}
+.obrigado-sub { color: var(--texto-suave); font-size: 1.05rem; max-width: 500px; margin-top: -8px; }
+
+/* Passo a passo */
+.passos {
+  list-style: none; margin: 4px 0 0; padding: 0; width: 100%;
+  display: grid; grid-template-columns: 1fr; gap: 10px; counter-reset: none;
+}
+@media (min-width: 620px) { .passos { grid-template-columns: repeat(3, 1fr); } }
+.passo {
+  position: relative; display: flex; align-items: center; gap: 12px; text-align: left;
+  padding: 14px; border-radius: 14px; background: var(--escuro-card); border: 1px solid #2f3543;
+}
+@media (min-width: 620px) { .passo { flex-direction: column; text-align: center; padding: 18px 12px; } }
+.passo strong { display: block; font-size: .98rem; }
+.passo span { color: var(--texto-suave); font-size: .85rem; }
+.passo-num {
+  flex: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center;
+  font-weight: 800; color: var(--texto-suave); background: rgba(255,255,255,.06); border: 2px solid #3a4050;
+}
+.passo-num svg { width: 20px; height: 20px; }
+.passo.feito .passo-num { background: #12a07f; border-color: #12a07f; color: #fff; }
+.passo.feito strong { color: #8fe0c6; }
+.passo.atual { border-color: rgba(25,179,141,.6); background: linear-gradient(160deg, rgba(19,74,62,.9), rgba(12,47,40,.9)); }
+.passo.atual .passo-num { border-color: #19b38d; color: #fff; animation: pulso-passo 1.8s ease-out infinite; }
+@keyframes pulso-passo { 0% { box-shadow: 0 0 0 0 rgba(25,179,141,.55); } 100% { box-shadow: 0 0 0 12px rgba(25,179,141,0); } }
+
+/* Lembrete do e-mail (evita o suporte de "comprei com outro e-mail") */
+.obrigado-email {
+  width: 100%; display: flex; gap: 12px; align-items: flex-start; text-align: left;
+  padding: 16px; border-radius: 14px; background: rgba(242,179,33,.10); border: 1px solid rgba(242,179,33,.35);
+}
+.obrigado-email > span { font-size: 1.4rem; line-height: 1.2; }
+.obrigado-email p { color: #f5e2b0; font-size: .95rem; }
+.obrigado-email strong, .obrigado-email b { color: #fff; }
+
+.obrigado-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; max-width: 420px; padding: 18px 22px; border-radius: 14px;
+  background: linear-gradient(180deg, #1fc196, #12a07f); color: #fff;
+  font-size: 1.15rem; font-weight: 800; box-shadow: 0 8px 26px rgba(18,160,127,.45);
+  animation: pulsar-btn 2.2s ease-in-out infinite;
+}
+.obrigado-btn span { transition: transform .15s; }
+.obrigado-btn:hover span { transform: translateX(4px); }
+@keyframes pulsar-btn { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+
+.obrigado-rodape { color: #7c8394; font-size: .85rem; }
+.obrigado-rodape b { color: var(--texto-suave); }
+
+@media (prefers-reduced-motion: reduce) {
+  .obrigado-pagina *, .obrigado-fundo::before { animation: none !important; }
+  .selo-check { stroke-dashoffset: 0; }
+}

@@ -2,36 +2,34 @@
   "buildCommand": "node build.js jejum",
   "outputDirectory": "dist",
   "cleanUrls": true,
+  "rewrites": [
+    { "source": "/membros/api/:acao.php", "destination": "/api/membros?acao=:acao" },
+    { "source": "/e-368c4e0875/baixar/:arquivo", "destination": "/e-368c4e0875/:arquivo" }
+  ],
   "headers": [
     {
       "source": "/(.*)\\.(js|css)",
       "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=300"
-        }
+        { "key": "Cache-Control", "value": "public, max-age=300" }
       ]
     },
     {
       "source": "/e-368c4e0875/(.*)",
       "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "private, max-age=3600"
-        }
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "Cache-Control", "value": "private, max-age=3600" }
       ]
     },
     {
-      "source": "/(membros|obrigado)",
+      "source": "/e-368c4e0875/baixar/(.*)",
       "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
+        { "key": "Content-Disposition", "value": "attachment" }
+      ]
+    },
+    {
+      "source": "/(membros|obrigado)(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
       ]
     }
   ]

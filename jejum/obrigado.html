@@ -2,10 +2,14 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <base href="/membros/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Seca Jejum · Compra aprovada</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>Seca Jejum Acesso</title>
+  <link rel="icon" type="image/png" href="assets/icone.png?v=20261106a">
+  <link rel="apple-touch-icon" href="assets/icone-180.png?v=20261106a">
+  <link rel="stylesheet" href="css/style.css?v=20261030a">
+  <link rel="stylesheet" href="css/obrigado.css?v=20261030a">
   <script>
   !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
   n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
@@ -15,39 +19,55 @@
   fbq('init', '1232754038578561');
   fbq('track', 'PageView');
   </script>
-  <link rel="stylesheet" href="membros.css">
-  <style>
-    .ob{padding:28px 18px 40px;display:flex;flex-direction:column;gap:18px;max-width:480px;margin:0 auto}
-    .ob-alerta{display:flex;gap:12px;align-items:center;background:#10b9811a;border:1px solid #10b98155;color:#a7f3d0;border-radius:14px;padding:12px 14px}
-    .ob-alerta svg{width:26px;height:26px;flex:none;color:#34d399}.ob-alerta div{display:flex;flex-direction:column}.ob-alerta span{font-size:14px;color:#93a7ad}
-    .ob-selo{width:96px;height:96px;margin:6px auto;border-radius:50%;background:radial-gradient(circle,#34d399,#059669);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 10px #10b98118,0 0 0 22px #10b9810a;animation:ob-p 2s infinite}
-    @keyframes ob-p{50%{box-shadow:0 0 0 14px #10b98118,0 0 0 30px #10b98108}}
-    .ob h1{margin:0;text-align:center;font-size:26px;line-height:1.25}.ob h1 mark{color:#34d399}
-    .ob p{margin:0;text-align:center;color:#c9d6da;line-height:1.5}
-    .ob ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
-    .ob li{display:flex;gap:12px;align-items:center;background:#121c20;border:1px solid #1f2e33;border-radius:14px;padding:12px 14px}
-    .ob li i{width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;background:#1f2e33}
-    .ob li.feito i{background:#10b981;color:#04150f}.ob li.atual{border-color:#10b98166}
-    .ob li div{display:flex;flex-direction:column}.ob li span{font-size:14px;color:#93a7ad}
-    .ob-email{display:flex;gap:10px;background:#f5a5240f;border:1px solid #f5a52455;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.45;color:#f3e3c3}
-  </style>
 </head>
-<body class="m">
-  <main class="ob">
-    <div class="ob-alerta"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-      <div><strong>Parabéns! Sua compra foi aprovada.</strong><span>Seu acesso à área de membros já está liberado.</span></div></div>
-    <div class="m-marca"><span>🔥</span> SECA JEJUM</div>
-    <div class="ob-selo"><svg viewBox="0 0 52 52" width="48" height="48"><path d="M14 27l8 8 16-17" fill="none" stroke="#04150f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<body class="tema-escuro obrigado-pagina">
+  <div class="obrigado-fundo" aria-hidden="true"></div>
+
+  <main class="obrigado">
+    <div class="obrigado-alerta" role="status">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+      <div>
+        <strong>Parabéns! Sua compra foi aprovada.</strong>
+        <span>Seu acesso à área de membros já está liberado.</span>
+      </div>
+    </div>
+
+    <img class="obrigado-logo" src="assets/quiz/logo.png" width="258" height="49" alt="Seca Jejum">
+
+    <div class="selo" aria-hidden="true">
+      <span class="selo-orbita"></span>
+      <span class="selo-orbita selo-orbita-2"></span>
+      <span class="selo-circulo">
+        <svg viewBox="0 0 52 52"><path class="selo-check" d="M14 27l8 8 16-17"/></svg>
+      </span>
+    </div>
+
     <h1>Seu <mark>plano de jejum personalizado</mark> está quase pronto</h1>
-    <p>Falta só um passo: entre na área de membros e finalize sua avaliação física. Leva 1 minuto.</p>
-    <ol>
-      <li class="feito"><i>✓</i><div><strong>Compra aprovada</strong><span>Pagamento confirmado</span></div></li>
-      <li class="atual"><i>2</i><div><strong>Entre com o e-mail da compra</strong><span>Sem senha, só o e-mail</span></div></li>
-      <li><i>3</i><div><strong>Finalize sua avaliação</strong><span>e acesse seu plano</span></div></li>
+    <p class="obrigado-sub">Falta só um passo: entre na área de membros e finalize sua avaliação física. Leva 1 minuto.</p>
+
+    <ol class="passos">
+      <li class="passo feito">
+        <span class="passo-num"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
+        <div><strong>Compra aprovada</strong><span>Pagamento confirmado</span></div>
+      </li>
+      <li class="passo atual">
+        <span class="passo-num">2</span>
+        <div><strong>Entre com o e-mail da compra</strong><span>Sem senha, só o e-mail</span></div>
+      </li>
+      <li class="passo">
+        <span class="passo-num">3</span>
+        <div><strong>Finalize sua avaliação</strong><span>e acesse seu plano</span></div>
+      </li>
     </ol>
-    <div class="ob-email">✉️<span><strong>Importante:</strong> para entrar, use <b>exatamente o mesmo e-mail que você preencheu na compra</b>. Foi para ele que enviamos a confirmação do pagamento.</span></div>
-    <a class="m-btn" href="/membros">Acessar meu plano →</a>
-    <p style="font-size:14px;color:#93a7ad">Dúvidas? Suporte: <b>nutrifacilsuporte@gmail.com</b></p>
+
+    <div class="obrigado-email">
+      <span aria-hidden="true">✉️</span>
+      <p><strong>Importante:</strong> para entrar, use <b>exatamente o mesmo e-mail que você preencheu na compra</b>. Foi para ele que enviamos a confirmação do pagamento.</p>
+    </div>
+
+    <a class="obrigado-btn" href="/membros/">Acessar meu plano <span aria-hidden="true">→</span></a>
+
+    <p class="obrigado-rodape">Dúvidas? Fale com o suporte: <b>nutrifacilsuporte@gmail.com</b></p>
   </main>
 </body>
 </html>
