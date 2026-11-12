@@ -93,6 +93,19 @@ module.exports = async (req, res) => {
     return json(res, 200, { ok: true });
   }
 
+  // Posição das telas na visão Flow (compartilhada pela equipe)
+  if (acao === "layout") {
+    const f = FUNIS[q.get("f")] ? q.get("f") : "jejum", g = q.get("g") === "pos" ? "pos" : "front";
+    const chave = "sjf:painel:layout:" + f + ":" + g;
+    if (req.method === "GET") { const v = await cmd("GET", chave); return json(res, 200, { ok: true, pos: v ? JSON.parse(v) : null }); }
+    const b = await corpo(req), pos = {};
+    Object.entries(b.pos || {}).slice(0, 200).forEach(([k, v]) => {
+      if (/^[a-z0-9-]{1,40}$/.test(k) && Array.isArray(v) && v.length === 2 && v.every((n) => Number.isFinite(n) && Math.abs(n) < 1e5)) pos[k] = [Math.round(v[0]), Math.round(v[1])];
+    });
+    if (b.limpar) await cmd("SET", chave, ""); else await cmd("SET", chave, JSON.stringify(pos));
+    return json(res, 200, { ok: true });
+  }
+
   if (acao === "dados") {
     const f = FUNIS[q.get("f")] ? q.get("f") : "jejum";
     const g = q.get("g") === "pos" ? "pos" : "front";
