@@ -35,6 +35,22 @@
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") enviar(); });
   window.addEventListener("sj:checkout", enviar);
 
+  // Presença ao vivo (Flowex): com a página aberta e visível, avisa a cada 40 s "tem alguém aqui".
+  // Vai só um código aleatório desta visita (nenhum dado pessoal); o servidor esquece em 2 minutos.
+  (function () {
+    if (TESTE) return;
+    var sid = null;
+    try { sid = sessionStorage.getItem("fx_sid"); if (!sid) { sid = Math.random().toString(36).slice(2, 12); sessionStorage.setItem("fx_sid", sid); } } catch (e) { sid = Math.random().toString(36).slice(2, 12); }
+    var pg = location.pathname, zona = /^\/membros/.test(pg) ? "area" : /^\/(obrigado|oferta)/.test(pg) ? "pos" : "funil";
+    function bate() {
+      if (document.visibilityState !== "visible") return;
+      var c = JSON.stringify({ f: FUNIL, vivo: zona, s: sid });
+      try { if (navigator.sendBeacon) navigator.sendBeacon("/api/ev", new Blob([c], { type: "text/plain" })); else fetch("/api/ev", { method: "POST", body: c, keepalive: true }).catch(function () {}); } catch (e) {}
+    }
+    bate(); setInterval(bate, 40000);
+    document.addEventListener("visibilitychange", bate);
+  })();
+
   window.SJ_RASTRO = function (grupo, passo) {
     try {
       if (!passo || TESTE) return;

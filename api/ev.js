@@ -14,6 +14,12 @@ module.exports = async (req, res) => {
   try {
     let b = await corpo(req);
     if (typeof b === "string") try { b = JSON.parse(b); } catch (e) { b = {}; }
+    // presença ao vivo (Flowex): quem está com a página aberta agora; cada visita some sozinha em 2 minutos
+    if (b.vivo && FUNIS.includes(b.f) && ["funil", "pos", "area"].includes(b.vivo)) {
+      const sid = limpa(b.s, 16), k = "an:" + b.f + ":vivo:" + b.vivo, agora = Date.now();
+      if (sid) await pipeline([["ZADD", k, agora, sid], ["ZREMRANGEBYSCORE", k, 0, agora - 120000], ["EXPIRE", k, 900]]);
+      res.statusCode = 204; return res.end();
+    }
     const f = FUNIS.includes(b.f) ? b.f : null, g = GRUPOS.includes(b.g) ? b.g : null;
     const lista = (Array.isArray(b.p) ? b.p : [b.p]).map((x) => limpa(x, 40)).filter(Boolean).slice(0, 30);
     if (f && g && lista.length) {
